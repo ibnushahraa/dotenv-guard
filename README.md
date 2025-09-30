@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/dotenv-guard)
 [![npm downloads](https://img.shields.io/npm/dm/dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/dotenv-guard)
-[![build](https://img.shields.io/github/actions/workflow/status/ibscode/dotenv-guard/test.yml?branch=main&style=flat-square)]()
+[![CI](https://github.com/ibnushahraa/dotenv-guard/actions/workflows/test.yml/badge.svg)](https://github.com/ibnushahraa/dotenv-guard/actions/workflows/test.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
 🔐 Secure & validate your `.env` files with **encryption**, **schema validation**, and **CLI tools**.  
