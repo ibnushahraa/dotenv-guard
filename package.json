@@ -1,0 +1,21 @@
+{
+  "name": "dotenv-guard",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/index.js",
+  "bin": {
+    "dotenv-guard": "./src/cli/index.js"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "keytar": "^7.9.0"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0"
+  }
+}
