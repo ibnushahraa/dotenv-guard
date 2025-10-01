@@ -20,7 +20,7 @@
     "env"
   ],
   "author": "Syarwani (https://github.com/ibnushahraa)",
-  "license": "ISC",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ibnushahraa/dotenv-guard.git"
