@@ -23,7 +23,7 @@ Think of it as **dotenv on steroids** — with guardrails for production-ready a
 ## 📦 Installation
 
 ```bash
-npm install dotenv-guard
+npm install @ibnushahraa/dotenv-guard
 ```
 
 ---
@@ -34,10 +34,10 @@ npm install dotenv-guard
 
 ```js
 // CommonJS
-require("dotenv-guard").config();
+require("@ibnushahraa/dotenv-guard").config();
 
 // ESM
-import { config } from "dotenv-guard";
+import { config } from "@ibnushahraa/dotenv-guard";
 config();
 
 console.log(process.env.DB_HOST);
@@ -63,7 +63,7 @@ Create `env.schema.json`:
 Enable validator:
 
 ```js
-import { config } from "dotenv-guard";
+import { config } from "@ibnushahraa/dotenv-guard";
 
 config({ validator: true });
 ```
@@ -76,7 +76,7 @@ If invalid → app exits (`process.exit(1)`).
 
 ```js
 // vite.config.js
-import { config } from "dotenv-guard";
+import { config } from "@ibnushahraa/dotenv-guard";
 
 config({
   path: ".env",

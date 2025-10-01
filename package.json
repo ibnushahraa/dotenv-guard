@@ -1,5 +1,5 @@
 {
-  "name": "dotenv-guard",
+  "name": "@ibnushahraa/dotenv-guard",
   "version": "1.0.0",
   "description": "Secure & validate your .env files with encryption and schema validation",
   "main": "./src/index.js",
