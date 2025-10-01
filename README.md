@@ -6,17 +6,17 @@
 [![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
 🔐 Secure & validate your `.env` files with **encryption**, **schema validation**, and **CLI tools**.  
-Think of it as **dotenv on steroids** — with extra guardrails for production-ready apps.
+Think of it as **dotenv on steroids** — with guardrails for production-ready apps.
 
 ---
 
 ## ✨ Features
 
-- 🔒 **AES-256-CBC Encryption** → keep your `.env` secrets safe at rest
+- 🔒 **AES-256-CBC Encryption** → keep `.env` secrets safe
 - 🗝 **System Keychain (via keytar)** → encryption key stored securely
-- ✅ **Schema Validation** → enforce required keys, regex patterns, and enums
-- ⚡ **CLI Generator** → auto-generate `.env.*` files (Node or Vite projects)
-- 🔄 **Drop-in replacement** for `dotenv.config()`
+- ✅ **Schema Validation** → enforce required keys, regex patterns, enums
+- ⚡ **CLI Generator** → auto-generate `.env.*` (Node or Vite)
+- 🔄 **Sync API** → drop-in replacement for `dotenv.config()` (no `await`)
 
 ---
 
@@ -33,7 +33,12 @@ npm install dotenv-guard
 ### 1. Basic (like dotenv)
 
 ```js
+// CommonJS
 require("dotenv-guard").config();
+
+// ESM
+import { config } from "dotenv-guard";
+config();
 
 console.log(process.env.DB_HOST);
 ```
@@ -42,7 +47,7 @@ console.log(process.env.DB_HOST);
 
 ### 2. With schema validation
 
-Create a file `env.schema.json`:
+Create `env.schema.json`:
 
 ```json
 {
@@ -55,33 +60,30 @@ Create a file `env.schema.json`:
 }
 ```
 
-Then enable validator:
+Enable validator:
 
 ```js
-require("dotenv-guard").config({ validator: true });
+import { config } from "dotenv-guard";
+
+config({ validator: true });
 ```
 
-If any env variable is missing or invalid → the app will exit (`process.exit(1)`).
+If invalid → app exits (`process.exit(1)`).
 
 ---
 
-### 3. Encrypt / Decrypt manually
+### 3. Vite Projects
 
 ```js
-const { encryptEnv, decryptEnv, loadEnv } = require("dotenv-guard");
+// vite.config.js
+import { config } from "dotenv-guard";
 
-// Encrypt .env (in-place)
-await encryptEnv(".env");
-
-// Decrypt into string
-const plain = await decryptEnv(".env");
-console.log(plain);
-
-// Load & inject into process.env (auto decrypt)
-await loadEnv(".env");
+config({
+  path: ".env",
+  enc: false, // keep plaintext for Vite
+  validator: true, // optional if env.schema.json exists
+});
 ```
-
-> The encryption key is automatically generated and securely stored in the system keychain (`keytar`).
 
 ---
 
@@ -97,26 +99,20 @@ Options:
 npx dotenv-guard init            # choose template
 npx dotenv-guard init custom     # interactive key-value input
 npx dotenv-guard init schema     # generate env.schema.json from .env
+npx dotenv-guard encrypt [file]  # encrypt .env
+npx dotenv-guard decrypt [file]  # decrypt .env
 npx dotenv-guard -v              # show version
 ```
 
-- Automatically detects **Node** or **Vite** project
+- Auto-detects **Node** or **Vite**
 - Creates `.env.development`, `.env.production`, etc.
 
 ---
 
 ## 🧪 Testing
 
-Run tests with Jest:
-
 ```bash
 npm test
-```
-
-With coverage:
-
-```bash
-npm test -- --coverage
 ```
 
 ---
@@ -129,6 +125,6 @@ npm test -- --coverage
 
 ## 💡 Notes
 
-- This is not a replacement for dotenv, but a **secure extension**
-- Use schema validation to prevent invalid envs in production
-- Best practice: commit only encrypted `.env` files + schema, not plaintext
+- Not a replacement for dotenv → a **secure extension**
+- Store only **encrypted `.env`** + `env.schema.json` in git
+- Sync API (no async/await needed)

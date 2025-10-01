@@ -1,4 +1,8 @@
 const fs = require("fs");
+
+// mock deasync supaya tidak butuh native binding
+jest.mock("deasync", () => ({}));
+
 jest.mock("fs");
 
 const { detectVite } = require("../src/cli/index");

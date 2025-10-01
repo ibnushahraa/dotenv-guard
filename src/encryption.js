@@ -2,58 +2,60 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const keytar = require("keytar");
+const deasync = require("deasync");
 
 const SERVICE = "dotenv-guard";
 const ACCOUNT = "default";
 
+/**
+ * Get encryption key from system keychain (via keytar), or create one if not exists.
+ * @returns {Promise<string>} Hex-encoded encryption key (32 bytes -> 64 hex chars)
+ */
 async function getOrCreateKey() {
   let key = await keytar.getPassword(SERVICE, ACCOUNT);
   if (!key) {
     key = crypto.randomBytes(32).toString("hex");
     await keytar.setPassword(SERVICE, ACCOUNT, key);
-    console.log("🔑 New encryption key stored in system keychain");
   }
   return key;
 }
 
-// Enkripsi isi file .env → timpa file aslinya
-async function encryptEnv(file = ".env") {
+/**
+ * Encrypt a single value.
+ * @param {string} value - Plaintext value
+ * @returns {Promise<string>} Encrypted value in format "ivHex:cipherHex"
+ */
+async function encryptValue(value) {
   const key = await getOrCreateKey();
   const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv("aes-256-cbc", Buffer.from(key, "hex"), iv);
 
-  const cipher = crypto.createCipheriv(
-    "aes-256-cbc",
-    Buffer.from(key, "hex"),
-    iv
-  );
-  const envContent = fs.readFileSync(path.join(process.cwd(), file), "utf8");
-
-  let encrypted = cipher.update(envContent, "utf8", "hex");
+  let encrypted = cipher.update(value, "utf8", "hex");
   encrypted += cipher.final("hex");
 
-  const encryptedData = iv.toString("hex") + ":" + encrypted;
-
-  fs.writeFileSync(path.join(process.cwd(), file), encryptedData);
-  console.log(`✅ ${file} encrypted`);
+  return iv.toString("hex") + ":" + encrypted;
 }
 
-// Dekripsi isi file .env → return plain text
-async function decryptEnv(file = ".env") {
-  const key = await getOrCreateKey();
-  const data = fs.readFileSync(path.join(process.cwd(), file), "utf8");
+/**
+ * Decrypt a single value.
+ * @param {string} value - Encrypted string in format "ivHex:cipherHex" or plaintext
+ * @returns {Promise<string>} Plaintext value
+ */
+async function decryptValue(value) {
+  if (!value || !value.includes(":")) return value;
 
-  if (!data.includes(":")) {
-    // berarti masih plaintext
-    return data;
+  const parts = value.split(":");
+  if (parts.length !== 2) throw new Error("Invalid encrypted value format");
+
+  const [ivHex, encrypted] = parts;
+  if (!/^[0-9a-fA-F]+$/.test(ivHex) || !/^[0-9a-fA-F]+$/.test(encrypted)) {
+    throw new Error("Invalid encrypted value format (non-hex)");
   }
-
-  const [ivHex, encrypted] = data.split(":");
   const iv = Buffer.from(ivHex, "hex");
-  const decipher = crypto.createDecipheriv(
-    "aes-256-cbc",
-    Buffer.from(key, "hex"),
-    iv
-  );
+  if (iv.length !== 16) throw new Error("Invalid initialization vector");
+
+  const key = await getOrCreateKey();
+  const decipher = crypto.createDecipheriv("aes-256-cbc", Buffer.from(key, "hex"), iv);
 
   let decrypted = decipher.update(encrypted, "hex", "utf8");
   decrypted += decipher.final("utf8");
@@ -61,24 +63,127 @@ async function decryptEnv(file = ".env") {
   return decrypted;
 }
 
-// Parse & inject ke process.env
-function injectToProcess(content) {
-  content.split("\n").forEach((line) => {
-    if (!line || line.startsWith("#")) return;
-    const [key, ...rest] = line.split("=");
-    const value = rest.join("=").trim();
-    if (key) process.env[key] = value;
-  });
+/**
+ * Encrypt all values inside .env file.
+ * Only encrypts values not already in "iv:cipher" format.
+ * @param {string} [file=".env"] - Path to .env file
+ */
+async function encryptEnv(file = ".env") {
+  const filePath = path.join(process.cwd(), file);
+  if (!fs.existsSync(filePath)) throw new Error(`${file} not found`);
+
+  const raw = fs.readFileSync(filePath, "utf8");
+  const lines = raw.split(/\r?\n/);
+  const output = [];
+
+  for (const line of lines) {
+    if (!line || line.trim() === "" || line.trim().startsWith("#")) {
+      output.push(line);
+      continue;
+    }
+
+    const idx = line.indexOf("=");
+    if (idx === -1) {
+      output.push(line);
+      continue;
+    }
+
+    const key = line.slice(0, idx).trim();
+    let value = line.slice(idx + 1).trim();
+
+    const parts = value.split(":");
+    const alreadyEncrypted = (parts.length === 2) &&
+      /^[0-9a-fA-F]+$/.test(parts[0]) &&
+      /^[0-9a-fA-F]+$/.test(parts[1]) &&
+      parts[0].length === 32;
+
+    if (!alreadyEncrypted) {
+      value = await encryptValue(value);
+    }
+
+    output.push(`${key}=${value}`);
+  }
+
+  fs.writeFileSync(filePath, output.join("\n"));
 }
 
-// Load schema
+/**
+ * Decrypt all values inside .env file and return as plaintext string.
+ * This does not write back unless called explicitly.
+ * @param {string} [file=".env"] - Path to .env file
+ * @returns {Promise<string>} Plaintext .env content
+ */
+async function decryptEnv(file = ".env") {
+  const filePath = path.join(process.cwd(), file);
+  if (!fs.existsSync(filePath)) throw new Error(`${file} not found`);
+
+  const raw = fs.readFileSync(filePath, "utf8");
+  const lines = raw.split(/\r?\n/);
+  const output = [];
+
+  for (const line of lines) {
+    if (!line || line.trim() === "" || line.trim().startsWith("#")) {
+      output.push(line);
+      continue;
+    }
+
+    const idx = line.indexOf("=");
+    if (idx === -1) {
+      output.push(line);
+      continue;
+    }
+
+    const key = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+
+    let plain = value;
+    if (value.includes(":")) {
+      plain = await decryptValue(value);
+    }
+
+    output.push(`${key}=${plain}`);
+  }
+
+  return output.join("\n");
+}
+
+/**
+ * Inject environment variables into process.env
+ * Decrypts values if needed.
+ * @param {string} content - Raw .env file content
+ */
+async function injectToProcess(content) {
+  if (!content) return;
+  for (const line of content.split(/\r?\n/)) {
+    if (!line || line.trim() === "" || line.trim().startsWith("#")) continue;
+
+    const idx = line.indexOf("=");
+    if (idx === -1) continue;
+
+    const key = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+
+    const plain = await decryptValue(value);
+    if (key) process.env[key] = plain;
+  }
+}
+
+/**
+ * Load env schema JSON if exists.
+ * @param {string} [schemaFile="env.schema.json"]
+ * @returns {Object|null}
+ */
 function loadSchema(schemaFile = "env.schema.json") {
   const schemaPath = path.join(process.cwd(), schemaFile);
   if (!fs.existsSync(schemaPath)) return null;
   return JSON.parse(fs.readFileSync(schemaPath, "utf8"));
 }
 
-// Validator
+/**
+ * Validate process.env against schema.
+ * @param {NodeJS.ProcessEnv} env - Current environment variables
+ * @param {Object} schema - Validation schema
+ */
 function validateEnv(env, schema) {
   let errors = [];
 
@@ -87,78 +192,123 @@ function validateEnv(env, schema) {
     const value = env[key];
 
     if (rules.required !== false && !value) {
-      errors.push(`❌ Missing required env: ${key}`);
+      errors.push(`Missing required env: ${key}`);
       continue;
     }
 
     if (rules.regex && value && !new RegExp(rules.regex).test(value)) {
-      errors.push(`❌ Env ${key}="${value}" does not match ${rules.regex}`);
+      errors.push(`Env ${key}="${value}" does not match ${rules.regex}`);
     }
 
     if (rules.enum && value && !rules.enum.includes(value)) {
-      errors.push(
-        `❌ Env ${key}="${value}" must be one of: ${rules.enum.join(", ")}`
-      );
+      errors.push(`Env ${key}="${value}" must be one of: ${rules.enum.join(", ")}`);
     }
   }
 
   if (errors.length) {
-    errors.forEach((e) => console.error(e));
-    console.error("⛔ dotenv-guard: Validation failed. Application stopped.");
+    errors.forEach(e => console.error("❌", e));
+    console.error("⛔ dotenv-guard: validation failed.");
     process.exit(1);
-  } else {
-    console.log("✅ .env validation passed");
   }
 }
 
-// Load env dengan auto decrypt
-async function loadEnv(file = ".env") {
-  const plain = await decryptEnv(file);
-  injectToProcess(plain);
-  console.log(`⚡ ${file} loaded into process.env`);
+/**
+ * Load .env file into process.env
+ * - If enc === true, ensures file is encrypted (encrypts plaintext values).
+ * - If enc === false, ensures file is plaintext (decrypts encrypted values).
+ * @param {string} [file=".env"] - Path to .env file
+ * @param {boolean} [enc=true] - Encryption mode
+ */
+async function loadEnv(file = ".env", enc = true) {
+  const filePath = path.join(process.cwd(), file);
+  if (!fs.existsSync(filePath)) throw new Error(`${file} not found`);
+
+  let content = fs.readFileSync(filePath, "utf8");
+
+  const fileHasEncryptedValue = (() => {
+    const lines = content.split(/\r?\n/);
+    for (const line of lines) {
+      if (!line || line.trim() === "" || line.trim().startsWith("#")) continue;
+      const idx = line.indexOf("=");
+      if (idx === -1) continue;
+      const value = line.slice(idx + 1).trim();
+      const parts = value.split(":");
+      if (parts.length === 2 && /^[0-9a-fA-F]+$/.test(parts[0]) && /^[0-9a-fA-F]+$/.test(parts[1]) && parts[0].length === 32) {
+        return true;
+      }
+    }
+    return false;
+  })();
+
+  if (enc === true) {
+    await encryptEnv(file);
+    content = fs.readFileSync(filePath, "utf8");
+  } else {
+    if (fileHasEncryptedValue) {
+      const plaintext = await decryptEnv(file);
+      fs.writeFileSync(filePath, plaintext);
+      content = plaintext;
+    }
+  }
+
+  await injectToProcess(content);
 }
 
-// API mirip dotenv.config()
+/**
+ * API similar to dotenv.config()
+ * @param {Object} [options] - Configuration options
+ * @param {string} [options.path=".env"] - Path to .env file
+ * @param {boolean} [options.enc=true] - Encryption mode
+ * @param {boolean} [options.validator=false] - Enable validation
+ * @param {string} [options.schema="env.schema.json"] - Schema file
+ */
 async function config(options = {}) {
-  const enc = options.enc !== false; // default true
   const file = options.path || ".env";
+  const enc = (options.enc === undefined) ? true : !!options.enc;
 
   try {
-    let plain;
-    if (enc) {
-      plain = await decryptEnv(file);
-      if (!plain.includes("=")) {
-        // sudah terenkripsi, langsung inject
-        injectToProcess(plain);
-      } else {
-        // masih plaintext, enkripsi dulu lalu inject
-        await encryptEnv(file);
-        plain = await decryptEnv(file);
-        injectToProcess(plain);
-      }
-    } else {
-      plain = await decryptEnv(file); // kalau sudah terenkripsi → auto decrypt
-      injectToProcess(plain);
-    }
+    await loadEnv(file, enc);
 
-    // ---- VALIDATOR ----
     if (options.validator) {
       const schema = loadSchema(options.schema || "env.schema.json");
       if (schema) {
         validateEnv(process.env, schema);
       } else {
-        console.warn("⚠️ validator aktif, tapi schema tidak ditemukan");
+        console.error("⚠️ Validator enabled but schema file not found");
       }
     }
   } catch (err) {
-    console.error("❌ Failed to process env:", err.message);
+    console.error("❌ dotenv-guard failed:", err.message);
     process.exit(1);
   }
 }
 
-module.exports = {
-  encryptEnv,
-  decryptEnv,
-  loadEnv,
-  config,
-};
+/**
+ * Wrap async function into sync using deasync.
+ * @param {Function} promiseFn - Async function
+ * @returns {Function} Synchronous version
+ */
+function deasyncify(promiseFn) {
+  return function (...args) {
+    let result, error, done = false;
+    promiseFn(...args)
+      .then(res => { result = res; done = true; })
+      .catch(err => { error = err; done = true; });
+    deasync.loopWhile(() => !done);
+    if (error) throw error;
+    return result;
+  };
+}
+
+
+if (process.env.NODE_ENV === "test") {
+  module.exports = { encryptEnv, decryptEnv, loadEnv, config };
+} else {
+  module.exports = {
+    encryptEnv: deasyncify(encryptEnv),
+    decryptEnv: deasyncify(decryptEnv),
+    loadEnv: deasyncify(loadEnv),
+    config: deasyncify(config),
+  };
+}
+

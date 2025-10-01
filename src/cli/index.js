@@ -4,13 +4,18 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 const { templatesNode, templatesVite } = require("./templates");
+const { encryptEnv, decryptEnv } = require("../../src"); // core functions
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-// ---------- Detect Vite ----------
+/**
+ * Detect whether the current project uses Vite.
+ * It checks package.json dependencies and known vite config files.
+ * @returns {boolean} True if Vite is detected, otherwise false.
+ */
 function detectVite() {
   const cwd = process.cwd();
   const pkgPath = path.join(cwd, "package.json");
@@ -24,7 +29,7 @@ function detectVite() {
       ) {
         return true;
       }
-    } catch {}
+    } catch { }
   }
 
   const viteConfigs = [
@@ -40,7 +45,11 @@ function detectVite() {
   return false;
 }
 
-// ---------- Create File ----------
+/**
+ * Create an environment file based on template type.
+ * @param {string} type - The environment type (e.g. "development", "production").
+ * @param {Record<string, string>} templates - Map of template type to template content.
+ */
 function createEnvFile(type, templates) {
   const filename = `.env.${type}`;
   const envPath = path.join(process.cwd(), filename);
@@ -53,13 +62,15 @@ function createEnvFile(type, templates) {
   }
 }
 
-// ---------- Custom Mode ----------
+/**
+ * Initialize a custom .env file interactively.
+ * Prompts the user for key-value pairs and writes to a new .env file.
+ */
 async function initCustom() {
   console.log("🚀 Dotenv Guard - Custom .env Generator\n");
 
   let content = "";
 
-  // buat readline baru untuk custom
   const rlCustom = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -85,7 +96,6 @@ async function initCustom() {
     return;
   }
 
-  // Pilih type untuk nama file
   console.log("\nSelect ENV TYPE for this custom file:");
   const envTypes = [
     "development",
@@ -130,7 +140,10 @@ async function initCustom() {
   });
 }
 
-// ---------- Init with Templates ----------
+/**
+ * Initialize environment files from templates.
+ * If Vite is detected, use VITE_ prefix templates.
+ */
 async function initEnv() {
   const hasVite = detectVite();
   const templates = hasVite ? templatesVite : templatesNode;
@@ -175,12 +188,16 @@ async function initEnv() {
   });
 }
 
-// ---------- Init Schema ----------
+/**
+ * Initialize env.schema.json file from an existing .env file.
+ * Each key becomes required by default with a catch-all regex.
+ * @param {string} [envFile=".env"] - The env file to base schema on.
+ */
 function initSchema(envFile = ".env") {
   const envPath = path.join(process.cwd(), envFile);
 
   if (!fs.existsSync(envPath)) {
-    console.log(`❌ ${envFile} not found`);
+    console.error(`❌ ${envFile} not found`);
     return;
   }
 
@@ -191,14 +208,14 @@ function initSchema(envFile = ".env") {
   for (const line of lines) {
     const [key] = line.split("=");
     schema[key.trim()] = {
-      regex: ".*", // default regex
+      regex: ".*",
       required: true,
     };
   }
 
   const schemaPath = path.join(process.cwd(), "env.schema.json");
   if (fs.existsSync(schemaPath)) {
-    console.log("⚠️ env.schema.json already exists, skipped");
+    console.error("⚠️ env.schema.json already exists, skipped");
     return;
   }
 
@@ -206,7 +223,37 @@ function initSchema(envFile = ".env") {
   console.log("✅ env.schema.json has been created from " + envFile);
 }
 
-// ---------- Show version ----------
+/**
+ * Encrypt all values in a given .env file.
+ * @param {string} [file=".env"] - Path to env file to encrypt.
+ */
+async function runEncrypt(file = ".env") {
+  try {
+    await encryptEnv(file);
+    console.log(`✅ ${file} has been encrypted`);
+  } catch (err) {
+    console.error("❌ Failed to encrypt:", err.message);
+  }
+}
+
+/**
+ * Decrypt all values in a given .env file.
+ * Writes back plaintext to the file.
+ * @param {string} [file=".env"] - Path to env file to decrypt.
+ */
+async function runDecrypt(file = ".env") {
+  try {
+    const plain = await decryptEnv(file);
+    fs.writeFileSync(path.join(process.cwd(), file), plain);
+    console.log(`✅ ${file} has been decrypted`);
+  } catch (err) {
+    console.error("❌ Failed to decrypt:", err.message);
+  }
+}
+
+/**
+ * Print version from package.json.
+ */
 function showVersion() {
   try {
     const pkg = JSON.parse(
@@ -214,7 +261,7 @@ function showVersion() {
     );
     console.log(`dotenv-guard version ${pkg.version}`);
   } catch {
-    console.log("⚠️ Cannot read version");
+    console.error("⚠️ Cannot read version");
   }
 }
 
@@ -224,11 +271,17 @@ if (args[0] === "init" || args[0] === "create") {
   if (args[1] === "custom") {
     initCustom();
   } else if (args[1] === "schema") {
-    initSchema(args[2] || ".env"); // default pakai .env
+    initSchema(args[2] || ".env");
     rl.close();
   } else {
     initEnv();
   }
+} else if (args[0] === "encrypt") {
+  rl.close();
+  runEncrypt(args[1] || ".env");
+} else if (args[0] === "decrypt") {
+  rl.close();
+  runDecrypt(args[1] || ".env");
 } else if (args[0] === "-v" || args[0] === "-version") {
   showVersion();
   rl.close();
@@ -236,13 +289,17 @@ if (args[0] === "init" || args[0] === "create") {
   console.log("Usage: npx dotenv-guard init");
   console.log("       npx dotenv-guard init custom");
   console.log("       npx dotenv-guard init schema [file]");
+  console.log("       npx dotenv-guard encrypt [file]");
+  console.log("       npx dotenv-guard decrypt [file]");
   console.log("       npx dotenv-guard -v");
   rl.close();
 }
 
-// Export function untuk keperluan test
+// Export functions for testing
 module.exports = {
   detectVite,
   createEnvFile,
   initSchema,
+  runEncrypt,
+  runDecrypt,
 };
