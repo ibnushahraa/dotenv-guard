@@ -3,9 +3,19 @@
 [![npm version](https://img.shields.io/npm/v/@ibnushahraa/dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/dotenv-guard)
 [![npm downloads](https://img.shields.io/npm/dm/@ibnushahraa/dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/dotenv-guard)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![CI](https://github.com/ibnushahraa/dotenv-guard/actions/workflows/test.yml/badge.svg)](https://github.com/ibnushahraa/dotenv-guard/actions)
 
-🔐 Secure & validate your `.env` files with **encryption**, **schema validation**, and **CLI tools**.  
+🔐 Secure & validate your `.env` files with **encryption**, **schema validation**, and **CLI tools**.
 Think of it as **dotenv on steroids** — with guardrails for production-ready apps.
+
+---
+
+## 📦 Packages
+
+This is a monorepo containing:
+
+- **[@ibnushahraa/dotenv-guard](./packages/core)** - Core library with encryption, validation, and multi-env support
+- **[@ibnushahraa/vite-plugin-dotenv-guard](./packages/vite-plugin)** - Vite plugin for seamless integration
 
 ---
 
@@ -16,114 +26,101 @@ Think of it as **dotenv on steroids** — with guardrails for production-ready a
 - ✅ **Schema Validation** → enforce required keys, regex patterns, enums
 - ⚡ **CLI Generator** → auto-generate `.env.*` (Node or Vite)
 - 🔄 **Sync API** → drop-in replacement for `dotenv.config()` (no `await`)
+- 🌍 **Multi-Environment** → auto-load `.env.[mode]` based on NODE_ENV
+- 🛡️ **Vite Security** → safe template with proper VITE_ prefix usage
+- 📦 **Zero Runtime Config** → works with CommonJS & ESM
 
 ---
 
-## 📦 Installation
+## 🚀 Quick Start
+
+### For Node.js / Express / NestJS
 
 ```bash
 npm install @ibnushahraa/dotenv-guard
 ```
 
----
-
-## 🚀 Usage
-
-### 1. Basic (like dotenv)
-
-```js
-// CommonJS
-require("@ibnushahraa/dotenv-guard").config();
-
-// ESM
-import { config } from "@ibnushahraa/dotenv-guard";
-config();
-
-console.log(process.env.DB_HOST);
-```
-
----
-
-### 2. With schema validation
-
-Create `env.schema.json`:
-
-```json
-{
-  "DB_HOST": { "required": true, "regex": "^[a-zA-Z0-9_.-]+$" },
-  "DB_PORT": { "required": true, "regex": "^[0-9]+$" },
-  "NODE_ENV": {
-    "required": true,
-    "enum": ["development", "production", "test"]
-  }
-}
-```
-
-Enable validator:
-
 ```js
 import { config } from "@ibnushahraa/dotenv-guard";
-
 config({ validator: true });
 ```
 
-If invalid → app exits (`process.exit(1)`).
+[**→ Full Core Documentation**](./packages/core)
 
 ---
 
-### 3. Vite Projects
+### For Vite / Vue / React
+
+```bash
+npm install @ibnushahraa/vite-plugin-dotenv-guard
+```
 
 ```js
 // vite.config.js
-import { config } from "@ibnushahraa/dotenv-guard";
+import dotenvGuard from '@ibnushabraa/vite-plugin-dotenv-guard';
 
-config({
-  path: ".env",
-  enc: false, // keep plaintext for Vite
-  validator: true, // optional if env.schema.json exists
+export default defineConfig({
+  plugins: [dotenvGuard({ validator: true })]
 });
 ```
 
----
-
-## 🖥 CLI Usage
-
-```bash
-npx dotenv-guard init
-```
-
-Options:
-
-```bash
-npx dotenv-guard init            # choose template
-npx dotenv-guard init custom     # interactive key-value input
-npx dotenv-guard init schema     # generate env.schema.json from .env
-npx dotenv-guard encrypt [file]  # encrypt .env
-npx dotenv-guard decrypt [file]  # decrypt .env
-npx dotenv-guard -v              # show version
-```
-
-- Auto-detects **Node** or **Vite**
-- Creates `.env.development`, `.env.production`, etc.
+[**→ Full Vite Plugin Documentation**](./packages/vite-plugin)
 
 ---
 
-## 🧪 Testing
+## 💡 Why dotenv-guard?
+
+| Feature | dotenv | dotenv-guard |
+|---------|--------|--------------|
+| Load .env files | ✅ | ✅ |
+| Encryption | ❌ | ✅ AES-256-CBC |
+| Schema validation | ❌ | ✅ Regex + Enum |
+| Multi-environment | ❌ | ✅ Auto-load |
+| CLI tools | ❌ | ✅ Full-featured |
+| Vite plugin | ❌ | ✅ First-class |
+| System keychain | ❌ | ✅ Via keytar |
+
+**Not a replacement for dotenv** → a **secure extension** for production apps.
+
+---
+
+## 🧪 Development
+
+This is a monorepo managed with npm workspaces.
 
 ```bash
+# Install dependencies
+npm install
+
+# Run all tests
 npm test
+
+# Test specific package
+npm run test:core
+npm run test:vite-plugin
 ```
 
 ---
 
-## 📜 License
+## 📖 Documentation
+
+- **[Core Package](./packages/core)** - Full API reference and usage examples
+- **[Vite Plugin](./packages/vite-plugin)** - Vite-specific integration guide
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+**Ways to contribute:**
+- Report bugs and suggest features
+- Submit pull requests
+- Improve documentation
+- Develop plugins for Vite integration
+
+---
+
+## 📄 License
 
 [MIT](LICENSE) © 2025
-
----
-
-## 💡 Notes
-
-- Not a replacement for dotenv → a **secure extension**
-- Store only **encrypted `.env`** + `env.schema.json` in git
-- Sync API (no async/await needed)

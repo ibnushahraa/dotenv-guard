@@ -1,0 +1,47 @@
+{
+  "name": "@ibnushahraa/vite-plugin-dotenv-guard",
+  "version": "0.1.0",
+  "description": "Vite plugin for dotenv-guard - secure environment variables with encryption and validation",
+  "main": "./src/index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    "require": "./src/index.js",
+    "import": "./src/index.mjs"
+  },
+  "scripts": {
+    "test": "node --experimental-vm-modules --no-warnings ../../node_modules/jest/bin/jest.js --silent"
+  },
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "dotenv",
+    "env",
+    "environment",
+    "encryption",
+    "validation",
+    "security"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "author": "Syarwani (https://github.com/ibnushahraa)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ibnushahraa/dotenv-guard.git",
+    "directory": "packages/vite-plugin"
+  },
+  "bugs": {
+    "url": "https://github.com/ibnushahraa/dotenv-guard/issues"
+  },
+  "homepage": "https://github.com/ibnushahraa/dotenv-guard/tree/main/packages/vite-plugin#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "vite": "^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0"
+  },
+  "dependencies": {
+    "@ibnushahraa/dotenv-guard": "^1.2.0"
+  }
+}

@@ -257,24 +257,55 @@ async function loadEnv(file = ".env", enc = true) {
 /**
  * API similar to dotenv.config()
  * @param {Object} [options] - Configuration options
- * @param {string} [options.path=".env"] - Path to .env file
+ * @param {string} [options.path=".env"] - Path to .env file (single file mode)
+ * @param {string} [options.mode] - Environment mode for multi-file loading (development/production/test)
+ * @param {boolean} [options.multiEnv=false] - Enable multi-env file loading (.env, .env.local, .env.[mode], etc)
  * @param {boolean} [options.enc=true] - Encryption mode
  * @param {boolean} [options.validator=false] - Enable validation
  * @param {string} [options.schema="env.schema.json"] - Schema file
  */
 async function config(options = {}) {
-  const file = options.path || ".env";
   const enc = (options.enc === undefined) ? true : !!options.enc;
 
   try {
-    await loadEnv(file, enc);
+    // Multi-env mode: load multiple .env files based on mode
+    if (options.multiEnv) {
+      const { getEnvFiles, getSchemaFile } = require("./multi-env.js");
+      const envFiles = getEnvFiles(options.mode);
 
-    if (options.validator) {
-      const schema = loadSchema(options.schema || "env.schema.json");
-      if (schema) {
-        validateEnv(process.env, schema);
-      } else {
-        console.error("⚠️ Validator enabled but schema file not found");
+      if (envFiles.length === 0) {
+        console.warn("⚠️ No .env files found for mode:", options.mode || process.env.NODE_ENV || 'development');
+      }
+
+      // Load all env files in order (later files override earlier ones)
+      for (const filePath of envFiles) {
+        const fileName = path.basename(filePath);
+        await loadEnv(fileName, enc);
+      }
+
+      // Load schema based on mode
+      if (options.validator) {
+        const schemaPath = getSchemaFile(options.mode);
+        if (schemaPath) {
+          const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
+          validateEnv(process.env, schema);
+        } else {
+          console.error("⚠️ Validator enabled but schema file not found");
+        }
+      }
+    }
+    // Single file mode (backward compatible)
+    else {
+      const file = options.path || ".env";
+      await loadEnv(file, enc);
+
+      if (options.validator) {
+        const schema = loadSchema(options.schema || "env.schema.json");
+        if (schema) {
+          validateEnv(process.env, schema);
+        } else {
+          console.error("⚠️ Validator enabled but schema file not found");
+        }
       }
     }
   } catch (err) {

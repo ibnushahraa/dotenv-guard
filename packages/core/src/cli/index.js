@@ -99,11 +99,8 @@ async function initCustom() {
   console.log("\nSelect ENV TYPE for this custom file:");
   const envTypes = [
     "development",
-    "staging",
     "production",
     "test",
-    "qa",
-    "preview",
     "custom filename",
   ];
   envTypes.forEach((t, i) => console.log(`${i + 1}) ${t}`));
@@ -150,9 +147,11 @@ async function initEnv() {
 
   console.log("🚀 Dotenv Guard - Environment File Generator\n");
   if (hasVite) {
-    console.log("⚡ Detected Vite project → using VITE_ prefix\n");
+    console.log("⚡ Detected Vite project → templates optimized for Vite");
+    console.log("   • Public vars use VITE_ prefix (exposed to client)");
+    console.log("   • Backend secrets WITHOUT VITE_ prefix (secure)\n");
   } else {
-    console.log("ℹ️ Standard Node.js project → using normal env keys\n");
+    console.log("ℹ️ Standard Node.js project → backend-focused templates\n");
   }
 
   console.log("Select ENV TYPE:");

@@ -1,0 +1,51 @@
+{
+  "name": "@ibnushahraa/dotenv-guard",
+  "version": "1.2.0",
+  "description": "Secure & validate your .env files with encryption and schema validation",
+  "main": "./src/index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    "require": "./src/index.js",
+    "import": "./src/index.mjs"
+  },
+  "bin": {
+    "dotenv-guard": "./src/cli/index.js"
+  },
+  "scripts": {
+    "test": "node --experimental-vm-modules --no-warnings ../../node_modules/jest/bin/jest.js --silent"
+  },
+  "keywords": [
+    "dotenv",
+    "env",
+    "environment",
+    "encryption",
+    "aes-256",
+    "validation",
+    "validator",
+    "schema",
+    "vite",
+    "nodejs",
+    "security",
+    "keychain",
+    "config",
+    "multi-environment"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "author": "Syarwani (https://github.com/ibnushahraa)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ibnushahraa/dotenv-guard.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/ibnushahraa/dotenv-guard/issues"
+  },
+  "homepage": "https://github.com/ibnushahraa/dotenv-guard#readme",
+  "dependencies": {
+    "deasync": "^0.1.30",
+    "keytar": "^7.9.0"
+  }
+}
