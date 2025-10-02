@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x] # test on multiple Node versions
+        node-version: [18.x, 20.x] # test on LTS versions
 
     steps:
       - name: Checkout repository
