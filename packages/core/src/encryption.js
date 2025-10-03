@@ -39,10 +39,12 @@ async function encryptValue(value) {
 /**
  * Decrypt a single value.
  * @param {string} value - Encrypted string in format "ivHex:cipherHex" or plaintext
+ * @param {boolean} [skipKeytar=false] - Skip keytar access (return value as-is)
  * @returns {Promise<string>} Plaintext value
  */
-async function decryptValue(value) {
+async function decryptValue(value, skipKeytar = false) {
   if (!value || !value.includes(":")) return value;
+  if (skipKeytar) return value;
 
   const parts = value.split(":");
   if (parts.length !== 2) throw new Error("Invalid encrypted value format");
@@ -164,7 +166,7 @@ async function injectToProcess(content, shouldDecrypt = true) {
     const key = line.slice(0, idx).trim();
     const value = line.slice(idx + 1).trim();
 
-    const plain = shouldDecrypt ? await decryptValue(value) : value;
+    const plain = shouldDecrypt ? await decryptValue(value, false) : await decryptValue(value, true);
     if (key) process.env[key] = plain;
   }
 }
