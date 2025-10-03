@@ -1,6 +1,6 @@
 {
   "name": "@ibnushahraa/vite-plugin-dotenv-guard",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Vite plugin for dotenv-guard - secure environment variables with encryption and validation",
   "main": "./src/index.js",
   "types": "./index.d.ts",

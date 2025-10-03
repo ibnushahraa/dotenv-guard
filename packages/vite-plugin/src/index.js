@@ -1,4 +1,5 @@
-const { config: loadConfig } = require('@ibnushahraa/dotenv-guard');
+const { config: loadConfigSync } = require('@ibnushahraa/dotenv-guard');
+const { config: loadConfigAsync } = require('@ibnushahraa/dotenv-guard/src/encryption.js');
 
 /**
  * Vite plugin for dotenv-guard
@@ -26,7 +27,7 @@ function dotenvGuardPlugin(options = {}) {
     name: 'vite-plugin-dotenv-guard',
 
     // Load env files before Vite's config is resolved
-    config(viteConfig, { mode }) {
+    async config(viteConfig, { mode }) {
       // Prepare config options
       const configOptions = {
         multiEnv: path ? false : multiEnv, // Disable multiEnv if path is specified
@@ -42,8 +43,8 @@ function dotenvGuardPlugin(options = {}) {
         configOptions.path = path;
       }
 
-      // Load environment variables
-      loadConfig(configOptions);
+      // Load environment variables using async version
+      await loadConfigAsync(configOptions);
 
       return viteConfig;
     },
