@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 const { templatesNode, templatesVite } = require("./templates");
-const { encryptEnv, decryptEnv } = require("../../src"); // core functions
+const { encryptEnv, decryptEnv, generateEncryptionConfig, saveEncryptionConfig } = require("../../src"); // core functions
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -251,6 +251,45 @@ async function runDecrypt(file = ".env") {
 }
 
 /**
+ * Generate encryption config (selective encryption)
+ * @param {string} [envFile=".env"] - Source .env file
+ */
+function initEncConfig(envFile = ".env") {
+  console.log("🔐 Dotenv Guard - Encryption Config Generator\n");
+
+  const envPath = path.join(process.cwd(), envFile);
+  if (!fs.existsSync(envPath)) {
+    console.error(`❌ ${envFile} not found`);
+    return;
+  }
+
+  const configPath = path.join(process.cwd(), "env.enc.json");
+  if (fs.existsSync(configPath)) {
+    console.error("⚠️ env.enc.json already exists, skipped");
+    return;
+  }
+
+  try {
+    const config = generateEncryptionConfig(envFile);
+    saveEncryptionConfig(config);
+
+    console.log("✅ env.enc.json generated from " + envFile);
+    console.log("\n📋 Summary:");
+    console.log(`   Keys to encrypt: ${config.encrypt.length}`);
+    if (config.encrypt.length > 0) {
+      console.log(`     ${config.encrypt.slice(0, 5).join(", ")}${config.encrypt.length > 5 ? ", ..." : ""}`);
+    }
+    console.log(`   Keys as plaintext: ${config.plaintext.length}`);
+    if (config.plaintext.length > 0) {
+      console.log(`     ${config.plaintext.slice(0, 5).join(", ")}${config.plaintext.length > 5 ? ", ..." : ""}`);
+    }
+    console.log("\n💡 Edit env.enc.json to customize which keys to encrypt");
+  } catch (err) {
+    console.error("❌ Failed to generate config:", err.message);
+  }
+}
+
+/**
  * Print version from package.json.
  */
 function showVersion() {
@@ -272,6 +311,9 @@ if (args[0] === "init" || args[0] === "create") {
   } else if (args[1] === "schema") {
     initSchema(args[2] || ".env");
     rl.close();
+  } else if (args[1] === "enc" || args[1] === "encryption") {
+    initEncConfig(args[2] || ".env");
+    rl.close();
   } else {
     initEnv();
   }
@@ -285,12 +327,14 @@ if (args[0] === "init" || args[0] === "create") {
   showVersion();
   rl.close();
 } else {
-  console.log("Usage: npx dotenv-guard init");
-  console.log("       npx dotenv-guard init custom");
-  console.log("       npx dotenv-guard init schema [file]");
-  console.log("       npx dotenv-guard encrypt [file]");
-  console.log("       npx dotenv-guard decrypt [file]");
-  console.log("       npx dotenv-guard -v");
+  console.log("Usage:");
+  console.log("  npx dotenv-guard init                     - Create .env files from templates");
+  console.log("  npx dotenv-guard init custom              - Create custom .env interactively");
+  console.log("  npx dotenv-guard init schema [file]       - Generate schema from .env file");
+  console.log("  npx dotenv-guard init enc [file]          - Generate encryption config (selective)");
+  console.log("  npx dotenv-guard encrypt [file]           - Encrypt .env file (auto-key)");
+  console.log("  npx dotenv-guard decrypt [file]           - Decrypt .env file");
+  console.log("  npx dotenv-guard -v                       - Show version");
   rl.close();
 }
 
