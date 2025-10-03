@@ -30,47 +30,100 @@ function encryptValue(value) {
 }
 
 /**
- * Decrypt a single value using AES-256-GCM
+ * Decrypt a single value using AES-256-GCM (new format) or legacy keytar format
  * @param {string} value - Encrypted string or plaintext
  * @returns {string} Plaintext value
  */
 function decryptValue(value) {
-  // If not encrypted or doesn't match our format, return as-is
-  if (!value || !value.startsWith('aes:')) {
-    return value;
+  // New format (aes:iv:tag:cipher)
+  if (value && value.startsWith('aes:')) {
+    const parts = value.split(':');
+    if (parts.length !== 4 || parts[0] !== 'aes') {
+      throw new Error('Invalid encrypted value format');
+    }
+
+    const [, ivHex, authTagHex, encryptedHex] = parts;
+
+    const masterKey = getOrCreateMasterKey();
+    const keyBuffer = Buffer.from(masterKey, 'hex');
+    const iv = Buffer.from(ivHex, 'hex');
+    const authTag = Buffer.from(authTagHex, 'hex');
+    const encrypted = Buffer.from(encryptedHex, 'hex');
+
+    const decipher = crypto.createDecipheriv('aes-256-gcm', keyBuffer, iv);
+    decipher.setAuthTag(authTag);
+
+    const decrypted = Buffer.concat([
+      decipher.update(encrypted),
+      decipher.final()
+    ]);
+
+    return decrypted.toString('utf8');
   }
 
-  const parts = value.split(':');
-  if (parts.length !== 4 || parts[0] !== 'aes') {
-    throw new Error('Invalid encrypted value format');
+  // Legacy format (iv:cipher) - try to decrypt with legacy
+  if (isLegacyEncrypted(value)) {
+    // Try to load legacy encryption module
+    let legacyEncryption = null;
+    try {
+      legacyEncryption = require('./encryption.js');
+    } catch (err) {
+      // Legacy module not available
+    }
+
+    if (legacyEncryption) {
+      console.warn(`⚠️  [dotenv-guard] Legacy encrypted format detected. Consider running "npx dotenv-guard migrate" to upgrade.`);
+      try {
+        return legacyEncryption.decryptValue(value);
+      } catch (err) {
+        throw new Error(`Failed to decrypt legacy format: ${err.message}. Run "npx dotenv-guard migrate" to upgrade.`);
+      }
+    } else {
+      throw new Error(`
+Legacy encrypted format detected, but keytar is not available.
+
+Migration required:
+1. Install old version: npm install @ibnushahraa/dotenv-guard@1.2.3
+2. Decrypt: npx dotenv-guard decrypt
+3. Upgrade: npm install @ibnushahraa/dotenv-guard@latest
+4. Re-encrypt: npx dotenv-guard encrypt
+
+Or install keytar for backward compatibility:
+   npm install keytar
+      `);
+    }
   }
 
-  const [, ivHex, authTagHex, encryptedHex] = parts;
-
-  const masterKey = getOrCreateMasterKey();
-  const keyBuffer = Buffer.from(masterKey, 'hex');
-  const iv = Buffer.from(ivHex, 'hex');
-  const authTag = Buffer.from(authTagHex, 'hex');
-  const encrypted = Buffer.from(encryptedHex, 'hex');
-
-  const decipher = crypto.createDecipheriv('aes-256-gcm', keyBuffer, iv);
-  decipher.setAuthTag(authTag);
-
-  const decrypted = Buffer.concat([
-    decipher.update(encrypted),
-    decipher.final()
-  ]);
-
-  return decrypted.toString('utf8');
+  // Not encrypted, return as-is
+  return value;
 }
 
 /**
- * Check if a value is encrypted
+ * Check if a value is encrypted with new format
  * @param {string} value
  * @returns {boolean}
  */
 function isEncrypted(value) {
   return value && typeof value === 'string' && value.startsWith('aes:');
+}
+
+/**
+ * Check if a value is encrypted with legacy keytar format
+ * Legacy format: ivHex:cipherHex (32-char IV + encrypted data, no prefix)
+ * @param {string} value
+ * @returns {boolean}
+ */
+function isLegacyEncrypted(value) {
+  if (!value || typeof value !== 'string') return false;
+
+  const parts = value.split(':');
+  if (parts.length !== 2) return false;
+
+  const [ivHex, encryptedHex] = parts;
+
+  // Legacy format: IV is exactly 32 hex chars (16 bytes)
+  // Both parts must be hex
+  return /^[0-9a-fA-F]{32}$/.test(ivHex) && /^[0-9a-fA-F]+$/.test(encryptedHex);
 }
 
 /**
@@ -217,6 +270,7 @@ module.exports = {
   encryptValue,
   decryptValue,
   isEncrypted,
+  isLegacyEncrypted,
   encryptEnv,
   decryptEnv,
   loadEnv,

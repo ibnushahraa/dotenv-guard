@@ -20,6 +20,7 @@ module.exports = {
   encryptValue: cryptoEncryption.encryptValue,
   decryptValue: cryptoEncryption.decryptValue,
   isEncrypted: cryptoEncryption.isEncrypted,
+  isLegacyEncrypted: cryptoEncryption.isLegacyEncrypted,
 
   // Key management (internal, auto-handled)
   getOrCreateMasterKey: keyManager.getOrCreateMasterKey,

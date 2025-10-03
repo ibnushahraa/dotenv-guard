@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 const { templatesNode, templatesVite } = require("./templates");
-const { encryptEnv, decryptEnv, generateEncryptionConfig, saveEncryptionConfig } = require("../../src"); // core functions
+const { encryptEnv, decryptEnv, generateEncryptionConfig, saveEncryptionConfig, isLegacyEncrypted } = require("../../src"); // core functions
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -290,6 +290,103 @@ function initEncConfig(envFile = ".env") {
 }
 
 /**
+ * Migrate legacy encrypted .env to new format
+ * @param {string} [file=".env"] - .env file to migrate
+ */
+async function migrateEncryption(file = ".env") {
+  console.log("🔄 Dotenv Guard - Migration Tool\n");
+
+  const filePath = path.join(process.cwd(), file);
+  if (!fs.existsSync(filePath)) {
+    console.error(`❌ ${file} not found`);
+    return;
+  }
+
+  // Detect if file has legacy encrypted values
+  const content = fs.readFileSync(filePath, "utf8");
+  const lines = content.split(/\r?\n/);
+
+  let hasLegacy = false;
+  let hasNew = false;
+  let plainCount = 0;
+
+  for (const line of lines) {
+    if (!line || line.trim() === "" || line.trim().startsWith("#")) continue;
+    const idx = line.indexOf("=");
+    if (idx === -1) continue;
+
+    const value = line.slice(idx + 1).trim();
+
+    if (isLegacyEncrypted(value)) {
+      hasLegacy = true;
+    } else if (value.startsWith("aes:")) {
+      hasNew = true;
+    } else {
+      plainCount++;
+    }
+  }
+
+  if (!hasLegacy && !hasNew) {
+    console.log("ℹ️  File contains only plaintext values (not encrypted)");
+    console.log("   Run 'npx dotenv-guard encrypt' to encrypt it");
+    return;
+  }
+
+  if (!hasLegacy && hasNew) {
+    console.log("✅ File already uses new encryption format");
+    return;
+  }
+
+  console.log("📋 Detection results:");
+  console.log(`   Legacy encrypted values: ${hasLegacy ? "Yes" : "No"}`);
+  console.log(`   New encrypted values: ${hasNew ? "Yes" : "No"}`);
+  console.log(`   Plaintext values: ${plainCount}`);
+  console.log("");
+
+  // Try to load legacy encryption
+  let legacyEncryption = null;
+  try {
+    legacyEncryption = require("../encryption.js");
+  } catch (err) {
+    console.error("❌ Legacy encryption module not available (keytar not installed)");
+    console.error("\nMigration requires keytar. Install it:");
+    console.error("   npm install keytar");
+    console.error("\nOr manually decrypt with old version:");
+    console.error("   npm install @ibnushahraa/dotenv-guard@1.2.3");
+    console.error("   npx dotenv-guard decrypt");
+    console.error("   npm install @ibnushahraa/dotenv-guard@latest");
+    console.error("   npx dotenv-guard encrypt");
+    return;
+  }
+
+  console.log("🔄 Starting migration...\n");
+
+  try {
+    // Step 1: Decrypt with legacy
+    console.log("1️⃣  Decrypting with legacy format...");
+    const plaintext = await legacyEncryption.decryptEnv(file);
+
+    // Step 2: Save plaintext temporarily
+    console.log("2️⃣  Saving plaintext...");
+    fs.writeFileSync(filePath, plaintext);
+
+    // Step 3: Re-encrypt with new format
+    console.log("3️⃣  Re-encrypting with new format...");
+    encryptEnv(file);
+
+    console.log("\n✅ Migration completed successfully!");
+    console.log(`   ${file} now uses new encryption format (aes:...)`);
+    console.log("\n💡 You can now uninstall keytar if not needed:");
+    console.log("   npm uninstall keytar");
+  } catch (err) {
+    console.error("\n❌ Migration failed:", err.message);
+    console.error("\nPlease try manual migration:");
+    console.error("1. Decrypt: npx dotenv-guard decrypt");
+    console.error("2. Re-encrypt: npx dotenv-guard encrypt");
+  }
+}
+
+/**
  * Print version from package.json.
  */
 function showVersion() {
@@ -317,6 +414,9 @@ if (args[0] === "init" || args[0] === "create") {
   } else {
     initEnv();
   }
+} else if (args[0] === "migrate") {
+  rl.close();
+  migrateEncryption(args[1] || ".env");
 } else if (args[0] === "encrypt") {
   rl.close();
   runEncrypt(args[1] || ".env");
@@ -332,6 +432,7 @@ if (args[0] === "init" || args[0] === "create") {
   console.log("  npx dotenv-guard init custom              - Create custom .env interactively");
   console.log("  npx dotenv-guard init schema [file]       - Generate schema from .env file");
   console.log("  npx dotenv-guard init enc [file]          - Generate encryption config (selective)");
+  console.log("  npx dotenv-guard migrate [file]           - Migrate legacy encryption to new format");
   console.log("  npx dotenv-guard encrypt [file]           - Encrypt .env file (auto-key)");
   console.log("  npx dotenv-guard decrypt [file]           - Decrypt .env file");
   console.log("  npx dotenv-guard -v                       - Show version");
