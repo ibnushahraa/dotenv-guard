@@ -8,8 +8,6 @@ const { decryptValue, isEncrypted } = require("@ibnushahraa/dotenv-guard");
  * @param {string} [options.path] - Path to .env file
  * @param {boolean} [options.validator=false] - Enable validation
  * @param {string} [options.schema='env.schema.json'] - Schema file path
- * @param {boolean} [options.encryption=true] - Auto-decrypt encrypted values
- * @param {string} [options.encConfig='env.enc.json'] - Encryption config file (selective encryption)
  * @returns {import('vite').Plugin}
  */
 function dotenvGuard(options = {}) {
@@ -17,8 +15,6 @@ function dotenvGuard(options = {}) {
     path: envPath,
     validator = false,
     schema = 'env.schema.json',
-    encryption = true,
-    encConfig = 'env.enc.json',
   } = options;
 
   return {
@@ -47,8 +43,8 @@ function dotenvGuard(options = {}) {
         const key = line.slice(0, idx).trim();
         let value = line.slice(idx + 1).trim();
 
-        // Auto-decrypt if encryption enabled
-        if (encryption && isEncrypted(value)) {
+        // Auto-decrypt encrypted values
+        if (isEncrypted(value)) {
           try {
             value = decryptValue(value);
           } catch (err) {

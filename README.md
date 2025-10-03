@@ -21,14 +21,16 @@ This is a monorepo containing:
 
 ## ✨ Features
 
-- 🔒 **AES-256-CBC Encryption** → keep `.env` secrets safe
-- 🗝 **System Keychain (via keytar)** → encryption key stored securely
+- 🔒 **AES-256-GCM Encryption** → keep `.env` secrets safe with authenticated encryption
+- 🔑 **Zero-Config Encryption** → auto-generated master key, no native dependencies
+- 🎯 **Selective Encryption** → choose which keys to encrypt via `env.enc.json`
 - ✅ **Schema Validation** → enforce required keys, regex patterns, enums
 - ⚡ **CLI Generator** → auto-generate `.env.*` (Node or Vite)
 - 🔄 **Sync API** → drop-in replacement for `dotenv.config()` (no `await`)
 - 🌍 **Multi-Environment** → auto-load `.env.[mode]` based on NODE_ENV
 - 🛡️ **Vite Security** → safe template with proper VITE_ prefix usage
-- 📦 **Zero Runtime Config** → works with CommonJS & ESM
+- 📦 **Cross-Platform** → works everywhere (Windows/macOS/Linux/Docker)
+- ♻️ **Backward Compatible** → auto-migration from legacy keytar format
 
 ---
 
@@ -73,12 +75,14 @@ export default defineConfig({
 | Feature | dotenv | dotenv-guard |
 |---------|--------|--------------|
 | Load .env files | ✅ | ✅ |
-| Encryption | ❌ | ✅ AES-256-CBC |
+| Encryption | ❌ | ✅ AES-256-GCM |
+| Zero native deps | ✅ | ✅ Built-in crypto |
+| Selective encryption | ❌ | ✅ Config-based |
 | Schema validation | ❌ | ✅ Regex + Enum |
 | Multi-environment | ❌ | ✅ Auto-load |
 | CLI tools | ❌ | ✅ Full-featured |
 | Vite plugin | ❌ | ✅ First-class |
-| System keychain | ❌ | ✅ Via keytar |
+| Cross-platform | ✅ | ✅ No build required |
 
 **Not a replacement for dotenv** → a **secure extension** for production apps.
 

@@ -34,6 +34,8 @@ module.exports = {
   // Config function (zero-config, auto-encrypt/decrypt)
   config: (options = {}) => {
     const file = options.path || '.env';
+
+    // Always auto-decrypt (read-only, no file modification)
     cryptoEncryption.loadEnv(file);
 
     // Validation if requested

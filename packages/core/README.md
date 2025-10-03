@@ -96,21 +96,22 @@ export default defineConfig({
 });
 ```
 
-**Option 2: Manual Config**
+**Option 2: Core Package (Not Recommended)**
+
+For Vite projects, **use the vite-plugin instead** (Option 1).
+
+If you must use core package in vite.config.js:
 
 ```js
-// vite.config.js
+// vite.config.js (NOT RECOMMENDED - use vite-plugin instead)
 import { config } from "@ibnushahraa/dotenv-guard";
 
+// Load specific env file
 config({
-  multiEnv: true,  // Auto-load based on NODE_ENV
-  mode: process.env.NODE_ENV || 'development',
-  enc: false,      // Keep plaintext for Vite
+  path: '.env.development',  // Manual file selection
+  enc: false,                // Decrypt to plaintext
   validator: true
 });
-
-// Files loaded in priority order:
-// .env → .env.local → .env.[mode] → .env.[mode].local
 ```
 
 ---
@@ -147,32 +148,39 @@ Main function to load and validate environment variables.
 const { config } = require('@ibnushahraa/dotenv-guard');
 
 config({
-  path: '.env',              // Single file path (default: '.env')
-  mode: 'development',       // Environment mode for multiEnv
-  multiEnv: false,          // Enable multi-file loading
-  enc: true,                // Enable encryption (default: true)
-  validator: false,         // Enable schema validation
-  schema: 'env.schema.json' // Schema file path
+  path: '.env',              // .env file path (default: '.env')
+  validator: false,         // Enable schema validation (default: false)
+  schema: 'env.schema.json' // Schema file path (default: 'env.schema.json')
 });
 
 // After config(), all env vars are loaded to process.env
 console.log(process.env.DB_HOST);
 ```
 
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `path` | `string` | `'.env'` | Path to .env file |
+| `validator` | `boolean` | `false` | Enable schema validation |
+| `schema` | `string` | `'env.schema.json'` | Schema file path |
+
+**Note:** Encryption is always enabled. Plugin auto-decrypts encrypted values at runtime (read-only, no file modification).
+
 **Common use cases:**
 
 ```javascript
-// Basic usage (like dotenv)
+// Basic usage (auto-decrypt encrypted values)
 config();
 
 // With validation
 config({ validator: true });
 
-// Multi-environment (Vite)
-config({ multiEnv: true, mode: 'development', enc: false });
+// Different env file
+config({ path: '.env.production' });
 
-// Without encryption (for Vite)
-config({ enc: false });
+// With custom schema
+config({ validator: true, schema: 'config/env.schema.json' });
 ```
 
 ---
@@ -227,11 +235,12 @@ Check out the [example/](./example) folder for working demos:
 
 ## Best Practices
 
-- ✅ Store **encrypted `.env`** in git (with `enc: true`)
+- ✅ Store **encrypted `.env`** in git (with selective encryption via `env.enc.json`)
 - ✅ Keep `env.schema.json` in git for validation
 - ✅ Use `.env.local` for local overrides (gitignored)
 - ✅ Never commit plaintext secrets
-- ✅ Use `multiEnv: true` for Vite/multi-environment projects
+- ✅ Use `@ibnushahraa/vite-plugin-dotenv-guard` for Vite projects
+- ✅ Use `npx dotenv-guard decrypt` to convert encrypted → plaintext (if needed)
 
 ---
 

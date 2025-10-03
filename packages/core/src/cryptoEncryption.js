@@ -234,8 +234,9 @@ function decryptEnv(file = '.env') {
  * Inject environment variables into process.env
  * Decrypts values if needed.
  * @param {string} content - Raw .env file content
+ * @param {boolean} [skipDecrypt=false] - Skip decryption (load as-is)
  */
-function injectToProcess(content) {
+function injectToProcess(content, skipDecrypt = false) {
   if (!content) return;
 
   for (const line of content.split(/\r?\n/)) {
@@ -247,7 +248,7 @@ function injectToProcess(content) {
     const key = line.slice(0, idx).trim();
     const value = line.slice(idx + 1).trim();
 
-    const plainValue = isEncrypted(value) ? decryptValue(value) : value;
+    const plainValue = (skipDecrypt || !isEncrypted(value)) ? value : decryptValue(value);
     if (key) process.env[key] = plainValue;
   }
 }
