@@ -1,71 +1,91 @@
-import { config as loadConfig } from '@ibnushahraa/dotenv-guard';
+import fs from "fs";
+import path from "path";
 
 /**
- * Vite plugin for dotenv-guard
- * Automatically loads and validates .env files with encryption support
- *
+ * Lightweight Vite plugin for dotenv-guard (no encryption, validation only)
  * @param {Object} options - Plugin options
- * @param {boolean} [options.multiEnv=true] - Enable multi-environment file loading
- * @param {boolean} [options.enc=false] - Enable encryption (default: false for Vite)
- * @param {boolean} [options.validator=false] - Enable schema validation
- * @param {string} [options.schema='env.schema.json'] - Schema file path
- * @param {string} [options.path] - Single .env file path (overrides multiEnv)
+ * @param {string} [options.path] - Path to .env file
+ * @param {boolean} [options.validator=false] - Enable validation
+ * @param {string} [options.schema='.env.guard'] - Schema file path
  * @returns {import('vite').Plugin}
  */
-export default function dotenvGuardPlugin(options = {}) {
+export default function dotenvGuard(options = {}) {
   const {
-    multiEnv = true,
-    enc = false,
+    path: envPath,
     validator = false,
     schema = 'env.schema.json',
-    path,
-    ...restOptions
   } = options;
 
   return {
     name: 'vite-plugin-dotenv-guard',
 
-    // Load env files before Vite's config is resolved
-    config(viteConfig, { mode }) {
-      // Prepare config options
-      const configOptions = {
-        multiEnv: path ? false : multiEnv, // Disable multiEnv if path is specified
-        mode: mode || 'development',
-        enc,
-        validator,
-        schema,
-        ...restOptions
-      };
+    async config(viteConfig, { mode }) {
+      // Auto-detect based on mode if path not specified
+      const finalPath = envPath || `.env.${mode}`;
+      const filePath = path.join(process.cwd(), finalPath);
 
-      // Add path if specified
-      if (path) {
-        configOptions.path = path;
+      if (!fs.existsSync(filePath)) {
+        console.warn(`[dotenv-guard] File not found: ${finalPath}`);
+        return viteConfig;
       }
 
-      // Load environment variables
-      loadConfig(configOptions);
+      // Load .env file
+      const content = fs.readFileSync(filePath, 'utf8');
 
+      // Parse and inject into process.env
+      for (const line of content.split(/\r?\n/)) {
+        if (!line || line.trim() === '' || line.trim().startsWith('#')) continue;
+
+        const idx = line.indexOf('=');
+        if (idx === -1) continue;
+
+        const key = line.slice(0, idx).trim();
+        const value = line.slice(idx + 1).trim();
+
+        if (key) process.env[key] = value;
+      }
+
+      // Validation (same as core)
+      if (validator) {
+        const schemaPath = path.join(process.cwd(), schema);
+
+        if (!fs.existsSync(schemaPath)) {
+          console.warn(`[dotenv-guard] Schema file not found: ${schema}`);
+          return viteConfig;
+        }
+
+        const schemaContent = fs.readFileSync(schemaPath, 'utf8');
+        const rules = JSON.parse(schemaContent);
+
+        // Validate
+        const errors = [];
+        for (const key in rules) {
+          const value = process.env[key];
+          const rule = rules[key];
+
+          if (rule.required !== false && !value) {
+            errors.push(`Missing required env: ${key}`);
+            continue;
+          }
+
+          if (rule.regex && value && !new RegExp(rule.regex).test(value)) {
+            errors.push(`Env ${key}="${value}" does not match ${rule.regex}`);
+          }
+
+          if (rule.enum && value && !rule.enum.includes(value)) {
+            errors.push(`Env ${key}="${value}" must be one of: ${rule.enum.join(", ")}`);
+          }
+        }
+
+        if (errors.length > 0) {
+          errors.forEach(e => console.error('❌', e));
+          console.error('⛔ dotenv-guard: validation failed.');
+          throw new Error('Environment validation failed');
+        }
+      }
+
+      console.log(`[dotenv-guard] Loaded: ${finalPath} (mode: ${mode})`);
       return viteConfig;
-    },
-
-    // Expose env vars to client (with VITE_ prefix only)
-    configResolved(resolvedConfig) {
-      const envPrefix = resolvedConfig.envPrefix || 'VITE_';
-      const prefixes = Array.isArray(envPrefix) ? envPrefix : [envPrefix];
-
-      // Log loaded env files in dev mode
-      if (resolvedConfig.command === 'serve') {
-        const mode = resolvedConfig.mode;
-        console.log(`[dotenv-guard] Loaded environment: ${mode}`);
-
-        if (validator) {
-          console.log(`[dotenv-guard] Schema validation: enabled`);
-        }
-
-        if (enc) {
-          console.log(`[dotenv-guard] Encryption: enabled`);
-        }
-      }
     }
   };
 }

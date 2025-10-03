@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Changed - Vite Plugin v0.3.0
+- **Breaking**: Removed encryption support from Vite plugin for stability
+  - Vite plugin now lightweight and standalone (no core package dependency)
+  - Removed `deasync` and `keytar` dependencies that caused blocking issues
+  - Plugin now uses native async/await without blocking event loop
+- **Auto Mode Detection**: Plugin automatically loads `.env.{mode}` based on Vite mode
+  - `npm run dev` → loads `.env.development`
+  - `npm run build` → loads `.env.production`
+  - `vite --mode staging` → loads `.env.staging`
+- **Schema Validation**: Same JSON format as core package (`env.schema.json`)
+  - Supports `required`, `regex`, `enum` validation rules
+- **Updated Documentation**: Complete rewrite of vite-plugin README
+  - Removed encryption examples and references
+  - Added clear "no encryption" warning
+  - Simplified API: only `path`, `validator`, `schema` options
+
+### Fixed - Core Package v1.2.2
+- Fixed `skipKeytar` parameter in `decryptValue` function
+- Removed unused `async` export that was added for Vite plugin
+
+---
+
 ## [1.2.0] - 2025-10-03
 
 ### Changed

@@ -4,18 +4,17 @@
 [![npm downloads](https://img.shields.io/npm/dm/@ibnushahraa/vite-plugin-dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/vite-plugin-dotenv-guard)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
-🔐 **Vite plugin for [dotenv-guard](https://github.com/ibnushahraa/dotenv-guard)** - secure environment variables with encryption, validation, and multi-environment support.
+🔐 **Vite plugin for dotenv-guard** - load and validate environment variables with auto-mode detection.
 
 ---
 
 ## ✨ Features
 
-- 🔄 **Auto Multi-Environment** → `.env`, `.env.local`, `.env.[mode]`, `.env.[mode].local`
-- ✅ **Schema Validation** → enforce required keys, regex patterns, enums
-- 🔒 **Optional Encryption** → AES-256-CBC (disabled by default for Vite)
-- ⚡ **Zero Config** → works out of the box with Vite modes
-- 🎯 **Type-Safe** → full TypeScript support
-- 🛡️ **Vite-Optimized** → respects `VITE_` prefix convention
+- 🔄 **Auto Mode Detection** → Automatically loads `.env.{mode}` based on Vite mode
+- ✅ **Schema Validation** → Enforce required keys, regex patterns, enums (same as core)
+- ⚡ **Zero Config** → Works out of the box with Vite modes
+- 🎯 **Type-Safe** → Full TypeScript support
+- 🛡️ **Vite-Optimized** → Lightweight, no encryption dependencies
 
 ---
 
@@ -44,10 +43,9 @@ export default defineConfig({
 ```
 
 This automatically loads:
-- `.env` → base config
-- `.env.local` → local overrides
-- `.env.development` → dev mode (when running `vite`)
-- `.env.production` → prod mode (when running `vite build`)
+- `.env.development` → when running `npm run dev` (development mode)
+- `.env.production` → when running `npm run build` (production mode)
+- `.env.{custom}` → when running `vite --mode custom`
 
 ---
 
@@ -63,6 +61,10 @@ Create `env.schema.json`:
   },
   "VITE_API_KEY": {
     "required": true
+  },
+  "VITE_ENV": {
+    "required": true,
+    "enum": ["development", "staging", "production"]
   }
 }
 ```
@@ -86,6 +88,36 @@ If validation fails, **build/dev server will exit** with error details.
 
 ---
 
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `path` | `string` | `undefined` | Custom .env file path (auto-detects `.env.{mode}` if not set) |
+| `validator` | `boolean` | `false` | Enable schema validation |
+| `schema` | `string` | `'env.schema.json'` | Schema file path |
+
+---
+
+## 📚 Examples
+
+### Custom Schema Path
+
+```js
+dotenvGuard({
+  validator: true,
+  schema: 'config/env.schema.json'
+})
+```
+
+### Custom File Path
+
+```js
+dotenvGuard({
+  path: '.env.custom',
+  validator: true
+})
+```
+
 ### TypeScript
 
 ```ts
@@ -103,97 +135,69 @@ export default defineConfig({
 });
 ```
 
-Full TypeScript definitions included!
+---
+
+## 📋 Schema Validation Rules
+
+Same format as core package:
+
+```json
+{
+  "VARIABLE_NAME": {
+    "required": true,        // Boolean (default: true)
+    "regex": "^pattern$",    // String regex pattern
+    "enum": ["val1", "val2"] // Array of allowed values
+  }
+}
+```
+
+**Example:**
+
+```json
+{
+  "VITE_API_URL": {
+    "required": true,
+    "regex": "^https?://.*"
+  },
+  "VITE_LOG_LEVEL": {
+    "required": false,
+    "enum": ["debug", "info", "warn", "error"]
+  }
+}
+```
 
 ---
 
-## ⚙️ Options
+## 🔄 Mode Detection
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `multiEnv` | `boolean` | `true` | Enable multi-environment file loading |
-| `enc` | `boolean` | `false` | Enable encryption (use `true` for encrypted .env) |
-| `validator` | `boolean` | `false` | Enable schema validation |
-| `schema` | `string` | `'env.schema.json'` | Schema file path |
-| `path` | `string` | `undefined` | Single .env file path (disables multiEnv) |
+Plugin automatically detects Vite mode:
 
----
-
-## 📚 Examples
-
-### Custom Schema Path
-
-```js
-dotenvGuard({
-  validator: true,
-  schema: 'config/env.schema.json'
-})
-```
-
-### Single File Mode
-
-```js
-dotenvGuard({
-  path: '.env.custom',
-  validator: true
-})
-```
-
-### With Encryption
-
-```js
-dotenvGuard({
-  enc: true,          // Enable encryption
-  validator: true
-})
-```
-
-**Note:** Encrypted .env files must be decrypted first using the core package CLI:
 ```bash
-npx dotenv-guard decrypt
+npm run dev              # Loads .env.development
+npm run build            # Loads .env.production
+vite --mode staging      # Loads .env.staging
 ```
 
 ---
 
-## 🔄 Multi-Environment Loading
+## 🆚 Comparison
 
-Files are loaded in this order (later files override earlier ones):
+### ❌ Without Plugin
 
-```
-.env                    # Base config (committed)
-.env.local              # Local overrides (gitignored)
-.env.[mode]             # Mode-specific (e.g., .env.development)
-.env.[mode].local       # Mode-specific local (gitignored)
-```
-
-**Vite modes:**
-- `vite` → `development`
-- `vite build` → `production`
-- `vite --mode staging` → `staging`
-
----
-
-## 🆚 vs Manual Config
-
-**❌ Manual (old way):**
 ```js
-import { config } from '@ibnushahraa/dotenv-guard';
-
-config({
-  multiEnv: true,
-  mode: process.env.NODE_ENV || 'development',
-  enc: false,
-  validator: true
-});
+// Manual dotenv loading
+import dotenv from 'dotenv';
+dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 export default defineConfig({
   // ... config
 });
 ```
 
-**✅ Plugin (new way):**
+### ✅ With Plugin
+
 ```js
-import dotenvGuard from '@ibnushabraa/vite-plugin-dotenv-guard';
+import dotenvGuard from '@ibnushahraa/vite-plugin-dotenv-guard';
 
 export default defineConfig({
   plugins: [dotenvGuard({ validator: true })]
@@ -205,16 +209,22 @@ export default defineConfig({
 ## 🛡️ Best Practices
 
 - ✅ Use `VITE_` prefix for client-side variables
-- ✅ Keep `.env.local` in `.gitignore`
-- ✅ Commit `.env` and `.env.production` (if not encrypted)
-- ✅ Enable `validator: true` in production
-- ✅ Use encryption (`enc: true`) for sensitive production configs
+- ✅ Keep `.env.local` and `.env.*.local` in `.gitignore`
+- ✅ Commit `.env.development` and `.env.production` templates
+- ✅ Enable `validator: true` to catch missing variables early
+
+---
+
+## ⚠️ Important Notes
+
+- **No Encryption Support**: This plugin does not support encryption. For encrypted .env files, use the core package directly with Node.js/Express
+- **Vite-Only**: Designed specifically for Vite. For other build tools, use [@ibnushahraa/dotenv-guard](https://www.npmjs.com/package/@ibnushahraa/dotenv-guard)
 
 ---
 
 ## 📖 Related
 
-- **Core Package:** [@ibnushahraa/dotenv-guard](https://github.com/ibnushahraa/dotenv-guard/tree/main/packages/core)
+- **Core Package:** [@ibnushahraa/dotenv-guard](https://github.com/ibnushahraa/dotenv-guard/tree/main/packages/core) (with encryption support)
 - **Monorepo:** [dotenv-guard](https://github.com/ibnushahraa/dotenv-guard)
 
 ---
