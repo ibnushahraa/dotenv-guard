@@ -151,8 +151,9 @@ async function decryptEnv(file = ".env") {
  * Inject environment variables into process.env
  * Decrypts values if needed.
  * @param {string} content - Raw .env file content
+ * @param {boolean} [shouldDecrypt=true] - Whether to decrypt values
  */
-async function injectToProcess(content) {
+async function injectToProcess(content, shouldDecrypt = true) {
   if (!content) return;
   for (const line of content.split(/\r?\n/)) {
     if (!line || line.trim() === "" || line.trim().startsWith("#")) continue;
@@ -163,7 +164,7 @@ async function injectToProcess(content) {
     const key = line.slice(0, idx).trim();
     const value = line.slice(idx + 1).trim();
 
-    const plain = await decryptValue(value);
+    const plain = shouldDecrypt ? await decryptValue(value) : value;
     if (key) process.env[key] = plain;
   }
 }
@@ -243,15 +244,16 @@ async function loadEnv(file = ".env", enc = true) {
   if (enc === true) {
     await encryptEnv(file);
     content = fs.readFileSync(filePath, "utf8");
+    await injectToProcess(content, true);
+  } else if (fileHasEncryptedValue) {
+    const plaintext = await decryptEnv(file);
+    fs.writeFileSync(filePath, plaintext);
+    content = plaintext;
+    await injectToProcess(content, false);
   } else {
-    if (fileHasEncryptedValue) {
-      const plaintext = await decryptEnv(file);
-      fs.writeFileSync(filePath, plaintext);
-      content = plaintext;
-    }
+    // File is already plaintext and enc is false
+    await injectToProcess(content, false);
   }
-
-  await injectToProcess(content);
 }
 
 /**
