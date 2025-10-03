@@ -1,0 +1,44 @@
+{
+  "name": "@ibnushahraa/nuxt-dotenv-guard",
+  "version": "0.1.0",
+  "description": "Nuxt module for dotenv-guard - secure .env files with encryption",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/module.mjs"
+    }
+  },
+  "main": "./src/module.mjs",
+  "types": "./src/module.d.ts",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  },
+  "keywords": [
+    "nuxt",
+    "nuxt-module",
+    "dotenv",
+    "env",
+    "environment",
+    "encryption",
+    "aes-256",
+    "validation",
+    "security"
+  ],
+  "author": "ibnushahraa",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ibnushahraa/dotenv-guard.git",
+    "directory": "packages/nuxt-module"
+  },
+  "dependencies": {
+    "@ibnushahraa/dotenv-guard": "^1.2.3",
+    "@nuxt/kit": "^3.0.0"
+  },
+  "peerDependencies": {
+    "nuxt": "^3.0.0"
+  }
+}
