@@ -267,6 +267,49 @@ function loadEnv(file = '.env') {
   injectToProcess(content);
 }
 
+/**
+ * Load schema from JSON file
+ * @param {string} schemaFile - Schema file path
+ * @returns {Object|null} Schema object or null if not found
+ */
+function loadSchema(schemaFile = 'env.schema.json') {
+  const schemaPath = path.join(process.cwd(), schemaFile);
+  if (!fs.existsSync(schemaPath)) return null;
+  return JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+}
+
+/**
+ * Validate process.env against schema
+ * @param {NodeJS.ProcessEnv} env - Current environment variables
+ * @param {Object} schema - Validation schema
+ */
+function validateEnv(env, schema) {
+  let errors = [];
+
+  for (const key in schema) {
+    const rules = schema[key];
+    const value = env[key];
+
+    if (rules.required !== false && !value) {
+      errors.push(`Missing required env: ${key}`);
+      continue;
+    }
+
+    if (rules.regex && value && !new RegExp(rules.regex).test(value)) {
+      errors.push(`Env ${key}="${value}" does not match ${rules.regex}`);
+    }
+
+    if (rules.enum && value && !rules.enum.includes(value)) {
+      errors.push(`Env ${key}="${value}" must be one of: ${rules.enum.join(", ")}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    errors.forEach(e => console.error('❌', e));
+    throw new Error('Environment validation failed');
+  }
+}
+
 module.exports = {
   encryptValue,
   decryptValue,
@@ -275,5 +318,7 @@ module.exports = {
   encryptEnv,
   decryptEnv,
   loadEnv,
-  injectToProcess
+  injectToProcess,
+  loadSchema,
+  validateEnv
 };

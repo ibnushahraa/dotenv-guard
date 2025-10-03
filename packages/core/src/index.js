@@ -32,15 +32,9 @@ module.exports = {
 
     // Validation if requested
     if (options.validator) {
-      try {
-        const { loadSchema, validateEnv } = require('./encryption.js');
-        const schema = loadSchema(options.schema || 'env.schema.json');
-        if (schema) {
-          validateEnv(process.env, schema);
-        }
-      } catch (err) {
-        console.error('[dotenv-guard] Validation failed - encryption.js not available');
-        throw err;
+      const schema = cryptoEncryption.loadSchema(options.schema || 'env.schema.json');
+      if (schema) {
+        cryptoEncryption.validateEnv(process.env, schema);
       }
     }
   },

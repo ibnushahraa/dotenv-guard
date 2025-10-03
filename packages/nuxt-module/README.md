@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@ibnushahraa/nuxt-dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/nuxt-dotenv-guard)
 [![npm downloads](https://img.shields.io/npm/dm/@ibnushahraa/nuxt-dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/nuxt-dotenv-guard)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![CI](https://github.com/ibnushahraa/dotenv-guard/actions/workflows/test.yml/badge.svg)](https://github.com/ibnushahraa/dotenv-guard/actions)
 
 🔐 **Nuxt 3 module for dotenv-guard** - secure .env files with encryption and validation.
 

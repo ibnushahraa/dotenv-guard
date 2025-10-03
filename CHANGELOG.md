@@ -47,9 +47,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New option: `encryption: true` (enabled by default)
   - New option: `encConfig: 'env.enc.json'` for selective encryption
 
-### Fixed - Core Package v1.2.3
-- Fixed `skipKeytar` parameter in `decryptValue` function
-- Removed unused `async` export that was added for Vite plugin
+### Added - Nuxt Module v0.1.0
+- **New Package**: `@ibnushahraa/nuxt-dotenv-guard` - Nuxt 3 module integration
+  - Auto mode detection (`.env.development` vs `.env.production`)
+  - Auto-decryption of AES-256-GCM encrypted values
+  - Schema validation support with JSON schema
+  - Public runtime config for `NUXT_PUBLIC_*` prefixed variables
+  - Server-side only vars by default (secure)
+  - TypeScript definitions included
+  - Zero-config setup with sensible defaults
+  - 11 comprehensive test cases
+
+### Fixed - Core Package v1.3.0
+- **Validator Integration**: Fixed validator to use crypto encryption instead of legacy
+  - Added `loadSchema` and `validateEnv` to `cryptoEncryption.js`
+  - Exported validation functions from `index.js` and `index.mjs`
+  - Updated tests to reflect synchronous `config()` function
+  - All 109 tests passing across all packages
 
 ---
 

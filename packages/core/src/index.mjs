@@ -11,6 +11,8 @@ export const encryptValue = cryptoEncryption.encryptValue;
 export const decryptValue = cryptoEncryption.decryptValue;
 export const isEncrypted = cryptoEncryption.isEncrypted;
 export const isLegacyEncrypted = cryptoEncryption.isLegacyEncrypted;
+export const loadSchema = cryptoEncryption.loadSchema;
+export const validateEnv = cryptoEncryption.validateEnv;
 
 // Key management
 export const getOrCreateMasterKey = keyManager.getOrCreateMasterKey;
@@ -30,15 +32,10 @@ export function config(options = {}) {
 
   // Validation if requested
   if (options.validator) {
-    // Dynamic import for legacy encryption module (for validation)
-    import('./encryption.js').then(({ loadSchema, validateEnv }) => {
-      const schema = loadSchema(options.schema || 'env.schema.json');
-      if (schema) {
-        validateEnv(process.env, schema);
-      }
-    }).catch(() => {
-      console.warn('[dotenv-guard] Validation requires encryption.js module');
-    });
+    const schema = cryptoEncryption.loadSchema(options.schema || 'env.schema.json');
+    if (schema) {
+      cryptoEncryption.validateEnv(process.env, schema);
+    }
   }
 }
 
@@ -50,6 +47,8 @@ export default {
   decryptValue,
   isEncrypted,
   isLegacyEncrypted,
+  loadSchema,
+  validateEnv,
   getOrCreateMasterKey,
   masterKeyExists,
   loadEncryptionConfig,
