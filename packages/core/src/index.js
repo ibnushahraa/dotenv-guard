@@ -3,14 +3,6 @@ const cryptoEncryption = require('./cryptoEncryption.js');
 const keyManager = require('./keyManager.js');
 const encryptionConfig = require('./encryptionConfig.js');
 
-// Legacy keytar-based encryption (for backward compatibility)
-let legacyEncryption = null;
-try {
-  legacyEncryption = require('./encryption.js');
-} catch (err) {
-  // Keytar not available, use crypto encryption only
-}
-
 // Export crypto-based encryption as default
 module.exports = {
   // Core encryption functions (auto-generated key, zero config)
@@ -40,14 +32,25 @@ module.exports = {
 
     // Validation if requested
     if (options.validator) {
-      const { loadSchema, validateEnv } = require('./encryption.js');
-      const schema = loadSchema(options.schema || 'env.schema.json');
-      if (schema) {
-        validateEnv(process.env, schema);
+      try {
+        const { loadSchema, validateEnv } = require('./encryption.js');
+        const schema = loadSchema(options.schema || 'env.schema.json');
+        if (schema) {
+          validateEnv(process.env, schema);
+        }
+      } catch (err) {
+        console.error('[dotenv-guard] Validation failed - encryption.js not available');
+        throw err;
       }
     }
   },
 
-  // Legacy (backward compatibility, if keytar available)
-  legacy: legacyEncryption
+  // Legacy (backward compatibility, lazy-loaded)
+  get legacy() {
+    try {
+      return require('./encryption.js');
+    } catch (err) {
+      return null;
+    }
+  }
 };
