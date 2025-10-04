@@ -3,8 +3,61 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Store master key in user home directory (cross-platform)
-const GLOBAL_KEY_DIR = path.join(os.homedir(), '.dotenv-guard');
+// Fallback directories for key storage
+function getKeyDirectory() {
+  // Priority 1: User home directory (most common)
+  try {
+    const homeDir = os.homedir();
+    if (homeDir && homeDir !== '/') {
+      const keyDir = path.join(homeDir, '.dotenv-guard');
+      // Test if we can write to this directory
+      try {
+        if (!fs.existsSync(keyDir)) {
+          fs.mkdirSync(keyDir, { recursive: true, mode: 0o700 });
+        }
+        // Test write access
+        const testFile = path.join(keyDir, '.write-test');
+        fs.writeFileSync(testFile, 'test');
+        fs.unlinkSync(testFile);
+        return keyDir;
+      } catch (e) {
+        // Home directory exists but not writable, try fallback
+      }
+    }
+  } catch (e) {
+    // Home directory not available
+  }
+
+  // Priority 2: Current working directory (for containers/serverless)
+  try {
+    const cwdKeyDir = path.join(process.cwd(), '.dotenv-guard');
+    if (!fs.existsSync(cwdKeyDir)) {
+      fs.mkdirSync(cwdKeyDir, { recursive: true, mode: 0o700 });
+    }
+    // Test write access
+    const testFile = path.join(cwdKeyDir, '.write-test');
+    fs.writeFileSync(testFile, 'test');
+    fs.unlinkSync(testFile);
+    return cwdKeyDir;
+  } catch (e) {
+    // CWD not writable
+  }
+
+  // Priority 3: Temp directory (last resort for serverless/lambda)
+  try {
+    const tmpKeyDir = path.join(os.tmpdir(), '.dotenv-guard');
+    if (!fs.existsSync(tmpKeyDir)) {
+      fs.mkdirSync(tmpKeyDir, { recursive: true, mode: 0o700 });
+    }
+    return tmpKeyDir;
+  } catch (e) {
+    // Even temp dir failed
+  }
+
+  // No writable directory available - will force env var usage
+  return null;
+}
+
 const MASTER_KEY_FILE = 'master.key';
 
 /**
@@ -16,15 +69,20 @@ function generateMasterKey() {
 }
 
 /**
- * Save master key to global directory
+ * Save master key to available directory
  * @param {string} masterKey - Hex-encoded master key
  */
 function saveMasterKey(masterKey) {
-  if (!fs.existsSync(GLOBAL_KEY_DIR)) {
-    fs.mkdirSync(GLOBAL_KEY_DIR, { recursive: true, mode: 0o700 });
+  const keyDir = getKeyDirectory();
+
+  if (!keyDir) {
+    throw new Error(
+      'No writable directory found for master key storage. ' +
+      'Please set DOTENV_GUARD_MASTER_KEY environment variable.'
+    );
   }
 
-  const keyPath = path.join(GLOBAL_KEY_DIR, MASTER_KEY_FILE);
+  const keyPath = path.join(keyDir, MASTER_KEY_FILE);
   fs.writeFileSync(keyPath, masterKey, { mode: 0o600 }); // Read/write for owner only
 
   return keyPath;
@@ -40,18 +98,28 @@ function getOrCreateMasterKey() {
     return process.env.DOTENV_GUARD_MASTER_KEY;
   }
 
-  // Priority 2: Global key file in user home directory
-  const keyPath = path.join(GLOBAL_KEY_DIR, MASTER_KEY_FILE);
+  // Priority 2: Check all possible key file locations
+  const keyDir = getKeyDirectory();
 
-  if (fs.existsSync(keyPath)) {
-    return fs.readFileSync(keyPath, 'utf8').trim();
+  if (keyDir) {
+    const keyPath = path.join(keyDir, MASTER_KEY_FILE);
+
+    if (fs.existsSync(keyPath)) {
+      return fs.readFileSync(keyPath, 'utf8').trim();
+    }
+
+    // Priority 3: Auto-generate and save (first time use)
+    const masterKey = generateMasterKey();
+    saveMasterKey(masterKey);
+
+    return masterKey;
   }
 
-  // Priority 3: Auto-generate and save (first time use)
-  const masterKey = generateMasterKey();
-  saveMasterKey(masterKey);
-
-  return masterKey;
+  // No writable location available
+  throw new Error(
+    'Cannot generate master key: no writable directory found. ' +
+    'Please set DOTENV_GUARD_MASTER_KEY environment variable.'
+  );
 }
 
 /**
@@ -59,16 +127,23 @@ function getOrCreateMasterKey() {
  * @returns {boolean}
  */
 function masterKeyExists() {
-  const keyPath = path.join(GLOBAL_KEY_DIR, MASTER_KEY_FILE);
+  if (process.env.DOTENV_GUARD_MASTER_KEY) {
+    return true;
+  }
+
+  const keyDir = getKeyDirectory();
+  if (!keyDir) return false;
+
+  const keyPath = path.join(keyDir, MASTER_KEY_FILE);
   return fs.existsSync(keyPath);
 }
 
 /**
- * Get master key directory path
- * @returns {string}
+ * Get master key directory path (for compatibility)
+ * @returns {string|null}
  */
 function getKeyDir() {
-  return GLOBAL_KEY_DIR;
+  return getKeyDirectory();
 }
 
 module.exports = {
@@ -77,6 +152,6 @@ module.exports = {
   getOrCreateMasterKey,
   masterKeyExists,
   getKeyDir,
-  GLOBAL_KEY_DIR,
+  getKeyDirectory,
   MASTER_KEY_FILE
 };

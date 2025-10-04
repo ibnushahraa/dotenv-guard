@@ -110,6 +110,7 @@ export default defineNuxtConfig({
 | Multi-environment | ❌ | ✅ Auto-load |
 | CLI tools | ❌ | ✅ Full-featured |
 | Vite plugin | ❌ | ✅ First-class |
+| Nuxt module | ❌ | ✅ Auto mode detection |
 | Cross-platform | ✅ | ✅ No build required |
 
 **Not a replacement for dotenv** → a **secure extension** for production apps.
@@ -130,6 +131,7 @@ npm test
 # Test specific package
 npm run test:core
 npm run test:vite-plugin
+npm run test:nuxt-module
 ```
 
 ---
@@ -138,6 +140,7 @@ npm run test:vite-plugin
 
 - **[Core Package](./packages/core)** - Full API reference and usage examples
 - **[Vite Plugin](./packages/vite-plugin)** - Vite-specific integration guide
+- **[Nuxt Module](./packages/nuxt-module)** - Nuxt 3 module integration guide
 
 ---
 
@@ -149,7 +152,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - Report bugs and suggest features
 - Submit pull requests
 - Improve documentation
-- Develop plugins for Vite integration
+- Develop plugins for other frameworks
 
 ---
 

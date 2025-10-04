@@ -138,6 +138,69 @@ npx dotenv-guard -v              # show version
 
 ---
 
+## 🔑 Master Key Storage
+
+The encryption master key is stored with automatic fallback for production-ready deployment:
+
+### Storage Priority
+
+1. **Environment Variable** (recommended for production)
+   ```bash
+   export DOTENV_GUARD_MASTER_KEY=your-64-char-hex-key
+   ```
+   - Best for CI/CD, Docker, Kubernetes
+   - Works in serverless environments (AWS Lambda, etc.)
+   - No filesystem dependency
+
+2. **User Home Directory** (default for development)
+   ```
+   ~/.dotenv-guard/master.key
+   ```
+   - Auto-generated on first use
+   - Persists across projects
+   - Secure file permissions (0600)
+
+3. **Project Directory** (fallback for restricted environments)
+   ```
+   ./.dotenv-guard/master.key
+   ```
+   - Used when home directory is not writable
+   - Good for Docker containers without persistent home
+   - **Remember to add to `.gitignore`**
+
+4. **Temp Directory** (last resort)
+   ```
+   /tmp/.dotenv-guard/master.key
+   ```
+   - For serverless/lambda environments
+   - Ephemeral, regenerated on each cold start
+
+### Production Deployment
+
+**Docker / Kubernetes:**
+```dockerfile
+ENV DOTENV_GUARD_MASTER_KEY=your-key-here
+```
+
+**AWS Lambda:**
+```bash
+aws lambda update-function-configuration \
+  --function-name my-function \
+  --environment Variables={DOTENV_GUARD_MASTER_KEY=your-key}
+```
+
+**Vercel / Netlify:**
+Add `DOTENV_GUARD_MASTER_KEY` in dashboard environment variables.
+
+### Key Generation
+
+Generate a master key manually:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+---
+
 ## 📚 API Reference
 
 ### `config(options)`
