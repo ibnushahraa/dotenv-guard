@@ -11,10 +11,12 @@
 ## ✨ Features
 
 - 🔄 **Auto Mode Detection** → Automatically loads `.env.{mode}` based on Vite mode
+- 🔒 **Encryption Support** → Auto-decrypts encrypted values (AES-256-GCM)
+- 🎯 **Selective Encryption** → Config-based encryption via `env.enc.json`
 - ✅ **Schema Validation** → Enforce required keys, regex patterns, enums (same as core)
 - ⚡ **Zero Config** → Works out of the box with Vite modes
 - 🎯 **Type-Safe** → Full TypeScript support
-- 🛡️ **Vite-Optimized** → Lightweight, no encryption dependencies
+- 📦 **Zero Native Deps** → Built-in crypto, no keytar required
 
 ---
 
@@ -96,9 +98,24 @@ If validation fails, **build/dev server will exit** with error details.
 | `validator` | `boolean` | `false` | Enable schema validation |
 | `schema` | `string` | `'env.schema.json'` | Schema file path |
 
+**Note:** Encryption is always enabled. Plugin auto-decrypts encrypted values at build-time (read-only, no file modification).
+
 ---
 
 ## 📚 Examples
+
+### With Validation
+
+```js
+dotenvGuard({
+  validator: true
+})
+```
+
+**Note:**
+- Encryption is always enabled (auto-decrypts encrypted values)
+- Selective encryption is configured via CLI: `npx dotenv-guard init enc`
+- To use plaintext .env, run: `npx dotenv-guard decrypt` first
 
 ### Custom Schema Path
 
@@ -217,7 +234,10 @@ export default defineConfig({
 
 ## ⚠️ Important Notes
 
-- **No Encryption Support**: This plugin does not support encryption. For encrypted .env files, use the core package directly with Node.js/Express
+- **Auto-Decryption**: Always enabled, auto-decrypts encrypted values using AES-256-GCM (via core package)
+- **Selective Encryption**: Configure via `npx dotenv-guard init enc` (creates `env.enc.json`)
+- **Read-Only**: Plugin only decrypts at build-time, never modifies `.env` files
+- **Master Key**: Encryption key stored in `~/.dotenv-guard/master.key` (auto-generated)
 - **Vite-Only**: Designed specifically for Vite. For other build tools, use [@ibnushahraa/dotenv-guard](https://www.npmjs.com/package/@ibnushahraa/dotenv-guard)
 
 ---

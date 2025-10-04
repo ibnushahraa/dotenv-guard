@@ -1,8 +1,9 @@
 const fs = require("fs");
 const path = require("path");
+const { decryptValue, isEncrypted } = require("@ibnushahraa/dotenv-guard");
 
 /**
- * Lightweight Vite plugin for dotenv-guard (no encryption, validation only)
+ * Vite plugin for dotenv-guard with encryption support
  * @param {Object} options - Plugin options
  * @param {string} [options.path] - Path to .env file
  * @param {boolean} [options.validator=false] - Enable validation
@@ -32,7 +33,7 @@ function dotenvGuard(options = {}) {
       // Load .env file
       const content = fs.readFileSync(filePath, 'utf8');
 
-      // Parse and inject into process.env
+      // Parse and inject into process.env (with auto-decryption)
       for (const line of content.split(/\r?\n/)) {
         if (!line || line.trim() === '' || line.trim().startsWith('#')) continue;
 
@@ -40,7 +41,17 @@ function dotenvGuard(options = {}) {
         if (idx === -1) continue;
 
         const key = line.slice(0, idx).trim();
-        const value = line.slice(idx + 1).trim();
+        let value = line.slice(idx + 1).trim();
+
+        // Auto-decrypt encrypted values
+        if (isEncrypted(value)) {
+          try {
+            value = decryptValue(value);
+          } catch (err) {
+            console.error(`[dotenv-guard] Failed to decrypt ${key}:`, err.message);
+            throw err;
+          }
+        }
 
         if (key) process.env[key] = value;
       }

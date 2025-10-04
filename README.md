@@ -16,19 +16,29 @@ This is a monorepo containing:
 
 - **[@ibnushahraa/dotenv-guard](./packages/core)** - Core library with encryption, validation, and multi-env support
 - **[@ibnushahraa/vite-plugin-dotenv-guard](./packages/vite-plugin)** - Vite plugin for seamless integration
+- **[@ibnushahraa/nuxt-dotenv-guard](./packages/nuxt-module)** - Nuxt 3 module with auto mode detection
 
 ---
 
-## ✨ Features
+## ✨ What Makes It Different?
 
-- 🔒 **AES-256-CBC Encryption** → keep `.env` secrets safe
-- 🗝 **System Keychain (via keytar)** → encryption key stored securely
-- ✅ **Schema Validation** → enforce required keys, regex patterns, enums
-- ⚡ **CLI Generator** → auto-generate `.env.*` (Node or Vite)
-- 🔄 **Sync API** → drop-in replacement for `dotenv.config()` (no `await`)
-- 🌍 **Multi-Environment** → auto-load `.env.[mode]` based on NODE_ENV
-- 🛡️ **Vite Security** → safe template with proper VITE_ prefix usage
-- 📦 **Zero Runtime Config** → works with CommonJS & ESM
+### 🔐 Security First
+- **AES-256-GCM Encryption** with authenticated encryption
+- **Zero-config** master key generation (no native dependencies!)
+- **Selective encryption** - choose what to encrypt via `env.enc.json`
+- Built-in **migration tools** from legacy formats
+
+### ✅ Production Ready
+- **Schema validation** with regex, enums, and required fields
+- **Multi-framework** support (Node.js, Vite, Nuxt)
+- **Auto mode detection** (development/production)
+- **Cross-platform** - works on Windows/macOS/Linux/Docker
+
+### 🚀 Developer Experience
+- **CLI tools** for quick setup and management
+- **Drop-in replacement** for dotenv (no breaking changes)
+- **TypeScript** definitions included
+- **109 tests** across all packages
 
 ---
 
@@ -68,17 +78,40 @@ export default defineConfig({
 
 ---
 
+### For Nuxt 3
+
+```bash
+npm install @ibnushahraa/nuxt-dotenv-guard
+```
+
+```js
+// nuxt.config.ts
+export default defineNuxtConfig({
+  modules: ['@ibnushahraa/nuxt-dotenv-guard'],
+  dotenvGuard: {
+    validator: true
+  }
+});
+```
+
+[**→ Full Nuxt Module Documentation**](./packages/nuxt-module)
+
+---
+
 ## 💡 Why dotenv-guard?
 
 | Feature | dotenv | dotenv-guard |
 |---------|--------|--------------|
 | Load .env files | ✅ | ✅ |
-| Encryption | ❌ | ✅ AES-256-CBC |
+| Encryption | ❌ | ✅ AES-256-GCM |
+| Zero native deps | ✅ | ✅ Built-in crypto |
+| Selective encryption | ❌ | ✅ Config-based |
 | Schema validation | ❌ | ✅ Regex + Enum |
 | Multi-environment | ❌ | ✅ Auto-load |
 | CLI tools | ❌ | ✅ Full-featured |
 | Vite plugin | ❌ | ✅ First-class |
-| System keychain | ❌ | ✅ Via keytar |
+| Nuxt module | ❌ | ✅ Auto mode detection |
+| Cross-platform | ✅ | ✅ No build required |
 
 **Not a replacement for dotenv** → a **secure extension** for production apps.
 
@@ -98,6 +131,7 @@ npm test
 # Test specific package
 npm run test:core
 npm run test:vite-plugin
+npm run test:nuxt-module
 ```
 
 ---
@@ -106,6 +140,7 @@ npm run test:vite-plugin
 
 - **[Core Package](./packages/core)** - Full API reference and usage examples
 - **[Vite Plugin](./packages/vite-plugin)** - Vite-specific integration guide
+- **[Nuxt Module](./packages/nuxt-module)** - Nuxt 3 module integration guide
 
 ---
 
@@ -117,7 +152,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - Report bugs and suggest features
 - Submit pull requests
 - Improve documentation
-- Develop plugins for Vite integration
+- Develop plugins for other frameworks
 
 ---
 

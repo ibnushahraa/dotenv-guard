@@ -9,25 +9,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed - Vite Plugin v0.3.0
-- **Breaking**: Removed encryption support from Vite plugin for stability
-  - Vite plugin now lightweight and standalone (no core package dependency)
-  - Removed `deasync` and `keytar` dependencies that caused blocking issues
-  - Plugin now uses native async/await without blocking event loop
-- **Auto Mode Detection**: Plugin automatically loads `.env.{mode}` based on Vite mode
-  - `npm run dev` → loads `.env.development`
-  - `npm run build` → loads `.env.production`
-  - `vite --mode staging` → loads `.env.staging`
-- **Schema Validation**: Same JSON format as core package (`env.schema.json`)
-  - Supports `required`, `regex`, `enum` validation rules
-- **Updated Documentation**: Complete rewrite of vite-plugin README
-  - Removed encryption examples and references
-  - Added clear "no encryption" warning
-  - Simplified API: only `path`, `validator`, `schema` options
+### Added - Core Package v1.3.0
+- **Zero-Config Encryption**: AES-256-GCM encryption with auto-generated master key
+  - No native dependencies required (no keytar build issues)
+  - Master key auto-generated and stored in `~/.dotenv-guard/master.key`
+  - Cross-platform support (Windows/macOS/Linux/Docker)
+  - Can override via `DOTENV_GUARD_MASTER_KEY` environment variable
+- **Selective Encryption**: Choose which keys to encrypt via `env.enc.json`
+  - New CLI command: `npx dotenv-guard init enc` to generate config
+  - Auto-detects sensitive patterns (PASSWORD, SECRET, KEY, TOKEN, etc.)
+  - Auto-detects public patterns (PORT, NODE_ENV, VITE_*, etc.)
+  - Config format: `{ encrypt: [...], plaintext: [...] }`
+  - Encrypts all keys by default if no config exists
+- **Legacy Migration Support**: Backward compatibility with keytar-encrypted files
+  - Auto-detects legacy format (`iv:cipher`) vs new format (`aes:iv:tag:cipher`)
+  - New CLI command: `npx dotenv-guard migrate` for automatic migration
+  - Fallback to legacy decryption if keytar still installed
+  - Clear error messages with migration instructions
+- **New Format**: `aes:ivHex:authTagHex:encryptedHex` with authenticated encryption
+  - GCM mode provides both encryption and authentication
+  - 12-byte IV (GCM standard) instead of 16-byte
+  - Auth tag prevents tampering
 
-### Fixed - Core Package v1.2.2
-- Fixed `skipKeytar` parameter in `decryptValue` function
-- Removed unused `async` export that was added for Vite plugin
+### Changed - Core Package v1.3.0
+- **Encryption Method**: AES-256-CBC → AES-256-GCM (authenticated encryption)
+- **Dependencies**: Moved `keytar` and `deasync` to `optionalDependencies`
+  - No longer required for basic functionality
+  - Only needed for legacy format migration
+- **Key Storage**: System keychain → user home directory (`~/.dotenv-guard/master.key`)
+  - Simpler, more portable, cross-platform compatible
+  - No native module compilation required
+
+### Changed - Vite Plugin v0.4.0
+- **Core Dependency Update**: Uses core v1.3.0 with production-ready fallback mechanism
+  - Encryption support via core package (no native deps)
+  - Auto-decrypts encrypted values during build
+  - Option: `encryption: true` (enabled by default)
+  - Option: `encConfig: 'env.enc.json'` for selective encryption
+
+### Added - Nuxt Module v0.1.0
+- **New Package**: `@ibnushahraa/nuxt-dotenv-guard` - Nuxt 3 module integration
+  - Auto mode detection (`.env.development` vs `.env.production`)
+  - Auto-decryption of AES-256-GCM encrypted values
+  - Schema validation support with JSON schema
+  - Public runtime config for `NUXT_PUBLIC_*` prefixed variables
+  - Server-side only vars by default (secure)
+  - TypeScript definitions included
+  - Zero-config setup with sensible defaults
+  - 11 comprehensive test cases
+
+### Added - Core Package v1.3.0 (continued)
+- **Production-Ready Fallback Mechanism**: Multi-level key storage with automatic fallback
+  - Priority 1: `DOTENV_GUARD_MASTER_KEY` environment variable (recommended for production)
+  - Priority 2: `~/.dotenv-guard/master.key` (user home directory, default for development)
+  - Priority 3: `./.dotenv-guard/master.key` (project directory, for restricted environments)
+  - Priority 4: `/tmp/.dotenv-guard/master.key` (temp directory, for serverless/lambda)
+  - Each level tested for write access before use
+  - Graceful error handling with clear instructions
+  - Works in Docker, Kubernetes, AWS Lambda, Vercel, Netlify, and other environments
+
+### Fixed - Core Package v1.3.0
+- **Validator Integration**: Fixed validator to use crypto encryption instead of legacy
+  - Added `loadSchema` and `validateEnv` to `cryptoEncryption.js`
+  - Exported validation functions from `index.js` and `index.mjs`
+  - Updated tests to reflect synchronous `config()` function
+  - All 85+ tests passing across all packages
 
 ---
 

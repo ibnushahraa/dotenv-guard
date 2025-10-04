@@ -11,10 +11,10 @@ This directory contains examples of how to use `dotenv-guard` in different scena
 - `env.schema.json` - Validation schema for environment variables
 
 ### Example Scripts
-- `basic-usage.js` - Basic usage like dotenv
+- `basic-usage.js` - Basic usage like dotenv (encryption always enabled)
 - `with-validation.js` - Using schema validation
-- `with-encryption.js` - Using encryption feature
-- `vite-config.js` - Multi-environment setup for Vite projects
+- `with-encryption.js` - Selective encryption example
+- `vite-config.js` - Multi-environment setup (Node.js context, use vite-plugin for actual Vite)
 
 ## Running Examples
 
@@ -28,12 +28,23 @@ node example/basic-usage.js
 node example/with-validation.js
 ```
 
-### 3. With Encryption
-First encrypt the .env file:
+### 3. Selective Encryption
 ```bash
+# Generate selective encryption config
 cd example
-npx dotenv-guard encrypt
-node with-encryption.js
+npx dotenv-guard init enc      # Creates env.enc.json
+
+# Edit env.enc.json to customize which keys to encrypt:
+# {
+#   "encrypt": ["DB_PASSWORD", "API_KEY"],
+#   "plaintext": ["PORT", "NODE_ENV"]
+# }
+
+npx dotenv-guard encrypt       # Encrypt only specified keys
+node with-encryption.js        # Load and auto-decrypt
+
+# To use plaintext .env:
+npx dotenv-guard decrypt       # Convert encrypted → plaintext
 ```
 
 ### 4. Multi-Environment (Vite)

@@ -10,6 +10,7 @@
     "test": "npm run test --workspaces",
     "test:core": "npm test --workspace=packages/core",
     "test:vite-plugin": "npm test --workspace=packages/vite-plugin",
+    "test:nuxt-module": "npm test --workspace=packages/nuxt-module",
     "prepublishOnly": "npm test"
   },
   "engines": {
