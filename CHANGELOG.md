@@ -40,12 +40,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Simpler, more portable, cross-platform compatible
   - No native module compilation required
 
-### Changed - Vite Plugin v0.3.0
-- **Encryption Support**: Re-enabled encryption via core package dependency
-  - Uses new crypto-based encryption (no native deps)
+### Changed - Vite Plugin v0.4.0
+- **Core Dependency Update**: Uses core v1.3.0 with production-ready fallback mechanism
+  - Encryption support via core package (no native deps)
   - Auto-decrypts encrypted values during build
-  - New option: `encryption: true` (enabled by default)
-  - New option: `encConfig: 'env.enc.json'` for selective encryption
+  - Option: `encryption: true` (enabled by default)
+  - Option: `encConfig: 'env.enc.json'` for selective encryption
 
 ### Added - Nuxt Module v0.1.0
 - **New Package**: `@ibnushahraa/nuxt-dotenv-guard` - Nuxt 3 module integration
@@ -58,12 +58,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Zero-config setup with sensible defaults
   - 11 comprehensive test cases
 
+### Added - Core Package v1.3.0 (continued)
+- **Production-Ready Fallback Mechanism**: Multi-level key storage with automatic fallback
+  - Priority 1: `DOTENV_GUARD_MASTER_KEY` environment variable (recommended for production)
+  - Priority 2: `~/.dotenv-guard/master.key` (user home directory, default for development)
+  - Priority 3: `./.dotenv-guard/master.key` (project directory, for restricted environments)
+  - Priority 4: `/tmp/.dotenv-guard/master.key` (temp directory, for serverless/lambda)
+  - Each level tested for write access before use
+  - Graceful error handling with clear instructions
+  - Works in Docker, Kubernetes, AWS Lambda, Vercel, Netlify, and other environments
+
 ### Fixed - Core Package v1.3.0
 - **Validator Integration**: Fixed validator to use crypto encryption instead of legacy
   - Added `loadSchema` and `validateEnv` to `cryptoEncryption.js`
   - Exported validation functions from `index.js` and `index.mjs`
   - Updated tests to reflect synchronous `config()` function
-  - All 109 tests passing across all packages
+  - All 85+ tests passing across all packages
 
 ---
 
