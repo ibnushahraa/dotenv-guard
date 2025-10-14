@@ -150,5 +150,45 @@ describe('vite-plugin-dotenv-guard', () => {
 
       delete process.env.OTHER_VAR;
     });
+
+    it('should surface decryption errors with context', async () => {
+      const core = require('@ibnushahraa/dotenv-guard');
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+
+      // Ensure encrypted value is generated with a different key than the one used during decrypt
+      process.env.DOTENV_GUARD_MASTER_KEY = '2'.repeat(64);
+      const encrypted = core.encryptValue('super-secret');
+      process.env.DOTENV_GUARD_MASTER_KEY = '1'.repeat(64);
+
+      fs.writeFileSync(testEnvFile, `SECRET=${encrypted}`);
+
+      const plugin = dotenvGuardPlugin({
+        path: '.env.test'
+      });
+
+      await expect(plugin.config({}, { mode: 'test' })).rejects.toThrow();
+      expect(errorSpy).toHaveBeenCalled();
+
+      delete process.env.DOTENV_GUARD_MASTER_KEY;
+      errorSpy.mockRestore();
+    });
+
+    it('should warn when schema file missing during validation', async () => {
+      fs.writeFileSync(testEnvFile, 'PLAIN=value');
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => { });
+
+      const plugin = dotenvGuardPlugin({
+        path: '.env.test',
+        validator: true,
+        schema: 'missing.schema.json'
+      });
+
+      const mockConfig = {};
+      const result = await plugin.config(mockConfig, { mode: 'test' });
+      expect(result).toBe(mockConfig);
+      expect(warnSpy).toHaveBeenCalledWith('[dotenv-guard] Schema file not found: missing.schema.json');
+
+      warnSpy.mockRestore();
+    });
   });
 });

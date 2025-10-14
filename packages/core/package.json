@@ -1,6 +1,6 @@
 {
   "name": "@ibnushahraa/dotenv-guard",
-  "version": "1.2.3",
+  "version": "1.3.0-beta.0",
   "description": "Secure & validate your .env files with encryption and schema validation",
   "main": "./src/index.js",
   "types": "./index.d.ts",
@@ -12,7 +12,8 @@
     "dotenv-guard": "./src/cli/index.js"
   },
   "scripts": {
-    "test": "node --experimental-vm-modules --no-warnings ../../node_modules/jest/bin/jest.js --silent"
+    "test": "node --experimental-vm-modules --no-warnings ../../node_modules/jest/bin/jest.js --silent",
+    "coverage": "node --experimental-vm-modules --no-warnings ../../node_modules/jest/bin/jest.js --coverage --silent"
   },
   "keywords": [
     "dotenv",
@@ -44,8 +45,8 @@
     "url": "https://github.com/ibnushahraa/dotenv-guard/issues"
   },
   "homepage": "https://github.com/ibnushahraa/dotenv-guard#readme",
-  "dependencies": {
-    "deasync": "^0.1.30",
-    "keytar": "^7.9.0"
+  "optionalDependencies": {
+    "keytar": "^7.9.0",
+    "deasync": "^0.1.30"
   }
 }

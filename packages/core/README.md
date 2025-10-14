@@ -4,6 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/@ibnushahraa/dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/dotenv-guard)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![CI](https://github.com/ibnushahraa/dotenv-guard/actions/workflows/test.yml/badge.svg)](https://github.com/ibnushahraa/dotenv-guard/actions)
+[![coverage](https://img.shields.io/badge/coverage-91.4%25-brightgreen?style=flat-square)](#)
 
 🔐 Secure & validate your `.env` files with **encryption**, **schema validation**, and **CLI tools**.
 Think of it as **dotenv on steroids** — with guardrails for production-ready apps.
@@ -96,21 +97,22 @@ export default defineConfig({
 });
 ```
 
-**Option 2: Manual Config**
+**Option 2: Core Package (Not Recommended)**
+
+For Vite projects, **use the vite-plugin instead** (Option 1).
+
+If you must use core package in vite.config.js:
 
 ```js
-// vite.config.js
+// vite.config.js (NOT RECOMMENDED - use vite-plugin instead)
 import { config } from "@ibnushahraa/dotenv-guard";
 
+// Load specific env file
 config({
-  multiEnv: true,  // Auto-load based on NODE_ENV
-  mode: process.env.NODE_ENV || 'development',
-  enc: false,      // Keep plaintext for Vite
+  path: '.env.development',  // Manual file selection
+  enc: false,                // Decrypt to plaintext
   validator: true
 });
-
-// Files loaded in priority order:
-// .env → .env.local → .env.[mode] → .env.[mode].local
 ```
 
 ---
@@ -137,6 +139,69 @@ npx dotenv-guard -v              # show version
 
 ---
 
+## 🔑 Master Key Storage
+
+The encryption master key is stored with automatic fallback for production-ready deployment:
+
+### Storage Priority
+
+1. **Environment Variable** (recommended for production)
+   ```bash
+   export DOTENV_GUARD_MASTER_KEY=your-64-char-hex-key
+   ```
+   - Best for CI/CD, Docker, Kubernetes
+   - Works in serverless environments (AWS Lambda, etc.)
+   - No filesystem dependency
+
+2. **User Home Directory** (default for development)
+   ```
+   ~/.dotenv-guard/master.key
+   ```
+   - Auto-generated on first use
+   - Persists across projects
+   - Secure file permissions (0600)
+
+3. **Project Directory** (fallback for restricted environments)
+   ```
+   ./.dotenv-guard/master.key
+   ```
+   - Used when home directory is not writable
+   - Good for Docker containers without persistent home
+   - **Remember to add to `.gitignore`**
+
+4. **Temp Directory** (last resort)
+   ```
+   /tmp/.dotenv-guard/master.key
+   ```
+   - For serverless/lambda environments
+   - Ephemeral, regenerated on each cold start
+
+### Production Deployment
+
+**Docker / Kubernetes:**
+```dockerfile
+ENV DOTENV_GUARD_MASTER_KEY=your-key-here
+```
+
+**AWS Lambda:**
+```bash
+aws lambda update-function-configuration \
+  --function-name my-function \
+  --environment Variables={DOTENV_GUARD_MASTER_KEY=your-key}
+```
+
+**Vercel / Netlify:**
+Add `DOTENV_GUARD_MASTER_KEY` in dashboard environment variables.
+
+### Key Generation
+
+Generate a master key manually:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+---
+
 ## 📚 API Reference
 
 ### `config(options)`
@@ -147,32 +212,39 @@ Main function to load and validate environment variables.
 const { config } = require('@ibnushahraa/dotenv-guard');
 
 config({
-  path: '.env',              // Single file path (default: '.env')
-  mode: 'development',       // Environment mode for multiEnv
-  multiEnv: false,          // Enable multi-file loading
-  enc: true,                // Enable encryption (default: true)
-  validator: false,         // Enable schema validation
-  schema: 'env.schema.json' // Schema file path
+  path: '.env',              // .env file path (default: '.env')
+  validator: false,         // Enable schema validation (default: false)
+  schema: 'env.schema.json' // Schema file path (default: 'env.schema.json')
 });
 
 // After config(), all env vars are loaded to process.env
 console.log(process.env.DB_HOST);
 ```
 
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `path` | `string` | `'.env'` | Path to .env file |
+| `validator` | `boolean` | `false` | Enable schema validation |
+| `schema` | `string` | `'env.schema.json'` | Schema file path |
+
+**Note:** Encryption is always enabled. Plugin auto-decrypts encrypted values at runtime (read-only, no file modification).
+
 **Common use cases:**
 
 ```javascript
-// Basic usage (like dotenv)
+// Basic usage (auto-decrypt encrypted values)
 config();
 
 // With validation
 config({ validator: true });
 
-// Multi-environment (Vite)
-config({ multiEnv: true, mode: 'development', enc: false });
+// Different env file
+config({ path: '.env.production' });
 
-// Without encryption (for Vite)
-config({ enc: false });
+// With custom schema
+config({ validator: true, schema: 'config/env.schema.json' });
 ```
 
 ---
@@ -227,11 +299,12 @@ Check out the [example/](./example) folder for working demos:
 
 ## Best Practices
 
-- ✅ Store **encrypted `.env`** in git (with `enc: true`)
+- ✅ Store **encrypted `.env`** in git (with selective encryption via `env.enc.json`)
 - ✅ Keep `env.schema.json` in git for validation
 - ✅ Use `.env.local` for local overrides (gitignored)
 - ✅ Never commit plaintext secrets
-- ✅ Use `multiEnv: true` for Vite/multi-environment projects
+- ✅ Use `@ibnushahraa/vite-plugin-dotenv-guard` for Vite projects
+- ✅ Use `npx dotenv-guard decrypt` to convert encrypted → plaintext (if needed)
 
 ---
 

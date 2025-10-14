@@ -1,0 +1,10 @@
+# Exclude test suites and coverage reports
+test/
+example/
+coverage/
+*.test.js
+*.spec.js
+
+# Misc local artifacts
+*.log
+.DS_Store

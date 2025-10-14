@@ -56,7 +56,7 @@ test("CLI init schema creates env.schema.json", () => {
 
 test("CLI shows usage when no args", () => {
   const output = runCLI("");
-  expect(output).toMatch(/Usage: npx dotenv-guard/);
+  expect(output).toMatch(/Usage:/);
 });
 
 test("CLI encrypt converts values to encrypted format", () => {

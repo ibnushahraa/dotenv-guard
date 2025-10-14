@@ -76,43 +76,37 @@ test("config with validator passes if schema valid", async () => {
   expect(process.env.PORT).toBe("3000");
 });
 
-test("config with validator fails if schema invalid", async () => {
+test("config with validator fails if schema invalid", () => {
   fs.writeFileSync(TMP_ENV, "PORT=abc\n");
   fs.writeFileSync(
     TMP_SCHEMA,
     JSON.stringify({ PORT: { regex: "^[0-9]+$", required: true } }, null, 2)
   );
 
-  await expect(
+  expect(() =>
     config({ path: TMP_ENV, enc: false, validator: true })
-  ).rejects.toThrow("exit 1");
-
-  expect(spyExit).toHaveBeenCalledWith(1);
+  ).toThrow("Environment validation failed");
 });
 
-test("decryptEnv throws if .env file does not exist", async () => {
-  await expect(decryptEnv("missing.env")).rejects.toThrow(/not found/);
+test("decryptEnv throws if .env file does not exist", () => {
+  expect(() => decryptEnv("missing.env")).toThrow(/not found/);
 });
 
-test("config fails if .env file does not exist", async () => {
-  await expect(config({ path: "missing.env", enc: false })).rejects.toThrow(
-    "exit 1"
+test("config fails if .env file does not exist", () => {
+  expect(() => config({ path: "missing.env", enc: false })).toThrow(
+    /not found/
   );
-
-  expect(spyExit).toHaveBeenCalledWith(1);
 });
 
-test("config warns if validator active but schema missing", async () => {
+test("config warns if validator active but schema missing", () => {
   fs.writeFileSync(TMP_ENV, "HELLO=WORLD\n");
 
-  await config({ path: TMP_ENV, enc: false, validator: true });
-
-  expect(spyError).toHaveBeenCalledWith(
-    "⚠️ Validator enabled but schema file not found"
-  );
+  // Schema not found is now silently ignored (schema returns null)
+  expect(() =>
+    config({ path: TMP_ENV, enc: false, validator: true })
+  ).not.toThrow();
 });
 
-test("config does not crash if default .env is missing and validator not used", async () => {
-  await expect(config()).rejects.toThrow("exit 1");
-  expect(spyExit).toHaveBeenCalledWith(1);
+test("config does not crash if default .env is missing and validator not used", () => {
+  expect(() => config()).toThrow(/not found/);
 });
