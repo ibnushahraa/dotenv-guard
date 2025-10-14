@@ -410,4 +410,5 @@ NUXT_DB_HOST=localhost
       expect(envVars.NUXT_DB_HOST).toBe('localhost');
     });
   });
+
 });

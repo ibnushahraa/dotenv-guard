@@ -26,5 +26,5 @@ jobs:
       - name: Install dependencies (skip optional native modules)
         run: npm ci --omit=optional
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests with coverage
+        run: npm run coverage

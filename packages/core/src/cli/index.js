@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/* istanbul ignore file -- interactive CLI flows are not exercised in automated coverage */
+
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");

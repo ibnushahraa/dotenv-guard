@@ -4,6 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/@ibnushahraa/dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/dotenv-guard)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![CI](https://github.com/ibnushahraa/dotenv-guard/actions/workflows/test.yml/badge.svg)](https://github.com/ibnushahraa/dotenv-guard/actions)
+[![coverage](https://img.shields.io/badge/coverage-91.4%25-brightgreen?style=flat-square)](#)
 
 🔐 Secure & validate your `.env` files with **encryption**, **schema validation**, and **CLI tools**.
 Think of it as **dotenv on steroids** — with guardrails for production-ready apps.

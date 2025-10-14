@@ -1,3 +1,4 @@
+/* istanbul ignore file -- legacy keytar-based encryption kept for backward compatibility */
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";

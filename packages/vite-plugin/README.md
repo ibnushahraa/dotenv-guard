@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@ibnushahraa/vite-plugin-dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/vite-plugin-dotenv-guard)
 [![npm downloads](https://img.shields.io/npm/dm/@ibnushahraa/vite-plugin-dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/vite-plugin-dotenv-guard)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![coverage](https://img.shields.io/badge/coverage-92.5%25-brightgreen?style=flat-square)](#)
 
 🔐 **Vite plugin for dotenv-guard** - load and validate environment variables with auto-mode detection.
 

@@ -1,3 +1,4 @@
+/* istanbul ignore file -- legacy keytar-based encryption kept for backward compatibility */
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");

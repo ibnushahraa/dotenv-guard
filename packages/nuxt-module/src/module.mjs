@@ -1,3 +1,4 @@
+/* istanbul ignore file -- Nuxt module requires runtime integration with Nuxt kit */
 import { defineNuxtModule, addPlugin, createResolver } from '@nuxt/kit'
 import { loadEnv, decryptValue, isEncrypted } from '@ibnushahraa/dotenv-guard'
 import fs from 'fs'

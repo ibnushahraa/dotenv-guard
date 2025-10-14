@@ -14,7 +14,8 @@
     "src"
   ],
   "scripts": {
-    "test": "node --experimental-vm-modules --no-warnings ../../node_modules/jest/bin/jest.js --silent"
+    "test": "node --experimental-vm-modules --no-warnings ../../node_modules/jest/bin/jest.js --silent",
+    "coverage": "node --experimental-vm-modules --no-warnings ../../node_modules/jest/bin/jest.js --coverage --silent"
   },
   "keywords": [
     "nuxt",
