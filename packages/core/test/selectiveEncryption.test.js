@@ -58,6 +58,16 @@ describe('Selective Encryption', () => {
       expect(loaded).toBeNull();
     });
 
+    test('should normalize non-array encrypt/plaintext to arrays', () => {
+      fs.writeFileSync('env.enc.json', JSON.stringify({
+        encrypt: 'not-an-array',
+        plaintext: 'also-not-an-array'
+      }));
+      const loaded = loadEncryptionConfig();
+      expect(loaded.encrypt).toEqual([]);
+      expect(loaded.plaintext).toEqual([]);
+    });
+
     test('should handle malformed JSON', () => {
       fs.writeFileSync('env.enc.json', 'not valid json');
       const loaded = loadEncryptionConfig();
@@ -114,6 +124,16 @@ describe('Selective Encryption', () => {
       expect(shouldEncrypt('API_KEY', config)).toBe(true);
       expect(shouldEncrypt('PORT', config)).toBe(false);
       expect(shouldEncrypt('UNKNOWN_KEY', config)).toBe(false);
+    });
+
+    test('should default to encrypt when config has empty arrays', () => {
+      const config = {
+        encrypt: [],
+        plaintext: []
+      };
+
+      expect(shouldEncrypt('ANY_KEY', config)).toBe(true);
+      expect(shouldEncrypt('ANOTHER_KEY', config)).toBe(true);
     });
   });
 
@@ -179,6 +199,22 @@ VITE_APP_NAME=MyApp
 
     test('should throw error if .env not found', () => {
       expect(() => generateEncryptionConfig('.env')).toThrow('.env not found');
+    });
+
+    test('should default unknown keys to encrypt list', () => {
+      const envContent = `
+UNKNOWN_CUSTOM_KEY=somevalue
+RANDOM_VAR=value123
+WEIRD_CONFIG=test
+`;
+      fs.writeFileSync('.env', envContent);
+
+      const config = generateEncryptionConfig('.env');
+
+      // Keys that don't match sensitive or public patterns should default to encrypt
+      expect(config.encrypt).toContain('UNKNOWN_CUSTOM_KEY');
+      expect(config.encrypt).toContain('RANDOM_VAR');
+      expect(config.encrypt).toContain('WEIRD_CONFIG');
     });
   });
 

@@ -2,6 +2,7 @@
 const cryptoEncryption = require('./cryptoEncryption.js');
 const keyManager = require('./keyManager.js');
 const encryptionConfig = require('./encryptionConfig.js');
+const { getEnvFiles, getSchemaFile } = require('./multi-env.js');
 
 // Export crypto-based encryption as default
 module.exports = {
@@ -25,16 +26,40 @@ module.exports = {
 
   // Config function (zero-config, auto-encrypt/decrypt)
   config: (options = {}) => {
-    const file = options.path || '.env';
+    // Support mode parameter for multi-environment loading
+    if (options.mode) {
+      const envFiles = getEnvFiles(options.mode);
 
-    // Always auto-decrypt (read-only, no file modification)
-    cryptoEncryption.loadEnv(file);
+      // Load all env files in priority order
+      envFiles.forEach(file => {
+        try {
+          cryptoEncryption.loadEnv(file);
+        } catch (err) {
+          // Skip missing files silently (already filtered by getEnvFiles)
+        }
+      });
 
-    // Validation if requested
-    if (options.validator) {
-      const schema = cryptoEncryption.loadSchema(options.schema || 'env.schema.json');
-      if (schema) {
-        cryptoEncryption.validateEnv(process.env, schema);
+      // Validation if requested
+      if (options.validator) {
+        const schemaFile = options.schema || getSchemaFile(options.mode) || 'env.schema.json';
+        const schema = cryptoEncryption.loadSchema(schemaFile);
+        if (schema) {
+          cryptoEncryption.validateEnv(process.env, schema);
+        }
+      }
+    } else {
+      // Legacy single-file mode
+      const file = options.path || '.env';
+
+      // Always auto-decrypt (read-only, no file modification)
+      cryptoEncryption.loadEnv(file);
+
+      // Validation if requested
+      if (options.validator) {
+        const schema = cryptoEncryption.loadSchema(options.schema || 'env.schema.json');
+        if (schema) {
+          cryptoEncryption.validateEnv(process.env, schema);
+        }
       }
     }
   },

@@ -110,3 +110,20 @@ test("config warns if validator active but schema missing", () => {
 test("config does not crash if default .env is missing and validator not used", () => {
   expect(() => config()).toThrow(/not found/);
 });
+
+test("config with validator fails if enum validation fails", () => {
+  fs.writeFileSync(TMP_ENV, "NODE_ENV=staging\n");
+  fs.writeFileSync(
+    TMP_SCHEMA,
+    JSON.stringify({
+      NODE_ENV: {
+        required: true,
+        enum: ["development", "production", "test"]
+      }
+    }, null, 2)
+  );
+
+  expect(() =>
+    config({ path: TMP_ENV, enc: false, validator: true })
+  ).toThrow("Environment validation failed");
+});

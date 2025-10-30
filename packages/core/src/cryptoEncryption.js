@@ -255,10 +255,11 @@ function injectToProcess(content, skipDecrypt = false) {
 
 /**
  * Load .env file into process.env with decryption
- * @param {string} [file=".env"] - Path to .env file
+ * @param {string} [file=".env"] - Path to .env file (relative or absolute)
  */
 function loadEnv(file = '.env') {
-  const filePath = path.join(process.cwd(), file);
+  // Check if file is already an absolute path
+  const filePath = path.isAbsolute(file) ? file : path.join(process.cwd(), file);
   if (!fs.existsSync(filePath)) {
     throw new Error(`${file} not found`);
   }
@@ -269,11 +270,12 @@ function loadEnv(file = '.env') {
 
 /**
  * Load schema from JSON file
- * @param {string} schemaFile - Schema file path
+ * @param {string} schemaFile - Schema file path (relative or absolute)
  * @returns {Object|null} Schema object or null if not found
  */
 function loadSchema(schemaFile = 'env.schema.json') {
-  const schemaPath = path.join(process.cwd(), schemaFile);
+  // Check if file is already an absolute path
+  const schemaPath = path.isAbsolute(schemaFile) ? schemaFile : path.join(process.cwd(), schemaFile);
   if (!fs.existsSync(schemaPath)) return null;
   return JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
 }

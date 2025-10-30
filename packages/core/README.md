@@ -2,9 +2,12 @@
 
 [![npm version](https://img.shields.io/npm/v/@ibnushahraa/dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/dotenv-guard)
 [![npm downloads](https://img.shields.io/npm/dm/@ibnushahraa/dotenv-guard.svg?style=flat-square)](https://www.npmjs.com/package/@ibnushahraa/dotenv-guard)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@ibnushahraa/dotenv-guard?style=flat-square&label=size)](https://bundlephobia.com/package/@ibnushahraa/dotenv-guard)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![CI](https://github.com/ibnushahraa/dotenv-guard/actions/workflows/test.yml/badge.svg)](https://github.com/ibnushahraa/dotenv-guard/actions)
-[![coverage](https://img.shields.io/badge/coverage-91.4%25-brightgreen?style=flat-square)](#)
+[![coverage](https://img.shields.io/badge/coverage-97.7%25-brightgreen?style=flat-square)](#)
+[![Known Vulnerabilities](https://snyk.io/test/github/ibnushahraa/dotenv-guard/badge.svg?style=flat-square)](https://snyk.io/test/github/ibnushahraa/dotenv-guard)
+[![Security](https://img.shields.io/badge/security-AES--256--GCM-blue?style=flat-square&logo=lock)](https://github.com/ibnushahraa/dotenv-guard#features)
 
 🔐 Secure & validate your `.env` files with **encryption**, **schema validation**, and **CLI tools**.
 Think of it as **dotenv on steroids** — with guardrails for production-ready apps.
@@ -49,7 +52,72 @@ console.log(process.env.DB_HOST);
 
 ---
 
-### 2. With schema validation
+### 2. Multi-Environment Mode (Auto-load based on environment)
+
+Load different `.env` files based on environment mode:
+
+```js
+import { config } from "@ibnushahraa/dotenv-guard";
+
+// Load based on environment variable
+config({
+  mode: process.env.DOTENV_GUARD_MODE || 'development'
+});
+
+// Or based on hostname (for server-specific configs)
+const os = require('os');
+config({
+  mode: os.hostname() === 'ubuntu' ? 'production' : 'development'
+});
+
+// Or check HOSTNAME env var
+config({
+  mode: process.env.HOSTNAME === 'production-server' ? 'production' : 'development'
+});
+```
+
+**How it works:**
+- When `mode` is specified, it loads multiple files in this priority order:
+  1. `.env` (base configuration)
+  2. `.env.local` (local overrides, gitignored)
+  3. `.env.[mode]` (e.g., `.env.production`)
+  4. `.env.[mode].local` (e.g., `.env.production.local`)
+- Later files override earlier ones
+- Only existing files are loaded
+
+**Example setup:**
+
+```bash
+# .env - base config (committed to git)
+DB_HOST=localhost
+API_URL=http://localhost:3000
+
+# .env.production - production config (committed to git)
+DB_HOST=prod-db.example.com
+API_URL=https://api.example.com
+
+# .env.local - local development overrides (gitignored)
+DB_PASSWORD=local-dev-password
+```
+
+```js
+// In your app
+config({ mode: process.env.DOTENV_GUARD_MODE || 'development' });
+```
+
+**Deployment:**
+
+```bash
+# Docker/Kubernetes
+ENV DOTENV_GUARD_MODE=production
+
+# Or in your .env file on production server
+DOTENV_GUARD_MODE=production
+```
+
+---
+
+### 3. With schema validation
 
 Create `env.schema.json`:
 
@@ -70,13 +138,19 @@ Enable validator:
 import { config } from "@ibnushahraa/dotenv-guard";
 
 config({ validator: true });
+
+// Or with mode
+config({
+  mode: process.env.DOTENV_GUARD_MODE || 'development',
+  validator: true
+});
 ```
 
 If invalid → app exits (`process.exit(1)`).
 
 ---
 
-### 3. Vite Projects (Multi-Environment)
+### 4. Vite Projects (Multi-Environment)
 
 **Option 1: Use the Vite Plugin** (recommended)
 
@@ -225,7 +299,8 @@ console.log(process.env.DB_HOST);
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `path` | `string` | `'.env'` | Path to .env file |
+| `path` | `string` | `'.env'` | Path to .env file (single file mode) |
+| `mode` | `string` | `undefined` | Environment mode for multi-file loading (e.g., 'development', 'production') |
 | `validator` | `boolean` | `false` | Enable schema validation |
 | `schema` | `string` | `'env.schema.json'` | Schema file path |
 
@@ -240,7 +315,24 @@ config();
 // With validation
 config({ validator: true });
 
-// Different env file
+// Multi-environment mode (recommended)
+config({
+  mode: process.env.DOTENV_GUARD_MODE || 'development'
+});
+
+// Multi-environment with validation
+config({
+  mode: process.env.DOTENV_GUARD_MODE || 'development',
+  validator: true
+});
+
+// Hostname-based mode selection
+const os = require('os');
+config({
+  mode: os.hostname() === 'ubuntu' ? 'production' : 'development'
+});
+
+// Single file mode (legacy)
 config({ path: '.env.production' });
 
 // With custom schema

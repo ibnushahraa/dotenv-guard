@@ -116,4 +116,46 @@ describe('keyManager (auto key storage)', () => {
       expect(() => saveMasterKey('c'.repeat(64))).toThrow('No writable directory found');
     });
   });
+
+  test('getOrCreateMasterKey throws when no writable directory available', () => {
+    const tmpDir = createTempDir();
+    createdDirs.push(tmpDir);
+
+    jest.spyOn(os, 'homedir').mockReturnValue('/');
+    jest.spyOn(os, 'tmpdir').mockReturnValue(tmpDir);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+    jest.spyOn(fs, 'mkdirSync').mockImplementation(() => {
+      throw new Error('EACCES');
+    });
+    jest.spyOn(fs, 'writeFileSync').mockImplementation(() => {
+      throw new Error('EACCES');
+    });
+
+    jest.isolateModules(() => {
+      const { getOrCreateMasterKey } = require('../src/keyManager');
+      expect(() => getOrCreateMasterKey()).toThrow('Cannot generate master key');
+    });
+  });
+
+  test('getOrCreateMasterKey auto-generates and saves key on first use', () => {
+    const fakeHome = createTempDir();
+    createdDirs.push(fakeHome);
+    jest.spyOn(os, 'homedir').mockReturnValue(fakeHome);
+
+    jest.isolateModules(() => {
+      const { getOrCreateMasterKey, getKeyDirectory, masterKeyExists, MASTER_KEY_FILE } = require('../src/keyManager');
+
+      expect(masterKeyExists()).toBe(false);
+
+      const key = getOrCreateMasterKey();
+
+      expect(key).toBeTruthy();
+      expect(key.length).toBe(64);
+      expect(masterKeyExists()).toBe(true);
+
+      const keyPath = path.join(getKeyDirectory(), MASTER_KEY_FILE);
+      expect(fs.existsSync(keyPath)).toBe(true);
+      expect(fs.readFileSync(keyPath, 'utf8').trim()).toBe(key);
+    });
+  });
 });

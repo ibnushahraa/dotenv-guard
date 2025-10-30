@@ -130,5 +130,50 @@ describe('Crypto Encryption (AES-256-GCM with auto-key)', () => {
 
       expect(firstEncrypt).toBe(secondEncrypt);
     });
+
+    test('should handle lines without = sign in encryptEnv', () => {
+      const envContent = 'VALID_KEY=value\nINVALID_LINE_WITHOUT_EQUALS\nANOTHER_KEY=value2\n';
+      fs.writeFileSync('.env', envContent);
+
+      encryptEnv('.env');
+      const encrypted = fs.readFileSync('.env', 'utf8');
+
+      // Invalid line should be preserved as-is
+      expect(encrypted).toContain('INVALID_LINE_WITHOUT_EQUALS');
+    });
+
+    test('should handle lines without = sign in decryptEnv', () => {
+      const envContent = 'VALID_KEY=value\nINVALID_LINE\nANOTHER_KEY=value2\n';
+      fs.writeFileSync('.env', envContent);
+
+      const decrypted = decryptEnv('.env');
+
+      // Invalid line should be preserved
+      expect(decrypted).toContain('INVALID_LINE');
+    });
+  });
+
+  describe('decryptValue edge cases', () => {
+    test('should throw error for invalid encrypted format', () => {
+      // Malformed aes: string (not 4 parts)
+      expect(() => {
+        decryptValue('aes:invalid:format');
+      }).toThrow('Invalid encrypted value format');
+    });
+
+    test('should throw error for aes string with wrong prefix', () => {
+      // Has 4 parts but invalid structure
+      expect(() => {
+        decryptValue('aes:part1:part2:part3:part4');
+      }).toThrow();
+    });
+  });
+
+  describe('encryptEnv edge cases', () => {
+    test('should throw error if file does not exist', () => {
+      expect(() => {
+        encryptEnv('nonexistent.env');
+      }).toThrow('nonexistent.env not found');
+    });
   });
 });

@@ -77,6 +77,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.1] - 2025-10-30
+
+### Added - Core Package v1.3.1
+- **Multi-Environment Mode Parameter**: New `mode` parameter for automatic multi-file loading
+  - Simple API: `config({ mode: process.env.DOTENV_GUARD_MODE || 'development' })`
+  - Auto-loads files in priority order: `.env` → `.env.local` → `.env.[mode]` → `.env.[mode].local`
+  - Hostname-based mode selection: `config({ mode: os.hostname() === 'ubuntu' ? 'production' : 'development' })`
+  - Environment variable based: `config({ mode: process.env.HOSTNAME === 'prod-server' ? 'production' : 'development' })`
+  - Works with validation: `config({ mode: 'production', validator: true })`
+  - Mode-specific schema support: auto-loads `env.schema.[mode].json` if exists
+  - 100% backward compatible - existing `path` parameter still works
+  - When both `mode` and `path` provided, `mode` takes precedence
+
+### Improved - Core Package v1.3.1
+- **Test Coverage**: Increased from 90.99% to 97.74%
+  - Added 21 new test cases (101 → 122 tests)
+  - New test files: `test/index.test.js`, `test/esm.test.mjs`
+  - Enhanced edge case coverage for error handling
+  - ESM export testing for `index.mjs`
+  - Legacy getter functionality tests
+  - Validation edge cases (enum, regex failures)
+  - Encryption edge cases (invalid formats, missing files)
+- **Documentation**: Enhanced with mode parameter examples
+  - Added comprehensive usage examples for multi-environment mode
+  - Hostname-based configuration patterns
+  - Docker/Kubernetes deployment examples
+  - New example file: `example/with-mode.js`
+  - Updated API reference with mode parameter details
+
+### Changed - Core Package v1.3.1
+- **File Loading**: Support for absolute paths in `loadEnv()` and `loadSchema()`
+  - Enables seamless integration with multi-env file loading
+  - Both relative and absolute paths now supported
+- **README Badge**: Updated coverage badge from 91.4% to 97.7%
+
+### Fixed - Core Package v1.3.1
+- **Path Resolution**: Fixed double `process.cwd()` join when using multi-env mode
+  - `getEnvFiles()` returns absolute paths, properly handled by `loadEnv()`
+  - No more path resolution conflicts
+
+### Changed - Vite Plugin v0.4.1
+- **Version Bump**: 0.4.0 → 0.4.1
+- **Core Dependency**: Updated to `@ibnushahraa/dotenv-guard@^1.3.1`
+
+### Changed - Nuxt Module v0.1.0-beta.1
+- **Version Bump**: 0.1.0-beta.0 → 0.1.0-beta.1
+- **Core Dependency**: Updated to `@ibnushahraa/dotenv-guard@^1.3.1`
+
+---
+
 ## [1.2.0] - 2025-10-03
 
 ### Changed
