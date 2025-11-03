@@ -269,12 +269,16 @@ NODE_ENV=development
       // DATABASE_URL and API_KEY should be encrypted
       const dbLine = lines.find(l => l.startsWith('DATABASE_URL='));
       const apiLine = lines.find(l => l.startsWith('API_KEY='));
+      expect(dbLine).toBeDefined();
+      expect(apiLine).toBeDefined();
       expect(dbLine).toContain('aes:');
       expect(apiLine).toContain('aes:');
 
       // PORT and NODE_ENV should be plaintext
       const portLine = lines.find(l => l.startsWith('PORT='));
       const envLine = lines.find(l => l.startsWith('NODE_ENV='));
+      expect(portLine).toBeDefined();
+      expect(envLine).toBeDefined();
       expect(portLine).toBe('PORT=3000');
       expect(envLine).toBe('NODE_ENV=development');
     });
