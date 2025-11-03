@@ -16,14 +16,17 @@ Think of it as **dotenv on steroids** — with guardrails for production-ready a
 
 ## ✨ Features
 
-- 🔒 **AES-256-CBC Encryption** → keep `.env` secrets safe
-- 🗝 **System Keychain (via keytar)** → encryption key stored securely
+- 🔒 **AES-256-GCM Encryption** → keep `.env` secrets safe with authenticated encryption
+- 🗝 **Auto-Generated Master Key** → stored in `~/.dotenv-guard/master.key` (no native dependencies)
 - ✅ **Schema Validation** → enforce required keys, regex patterns, enums
 - ⚡ **CLI Generator** → auto-generate `.env.*` (Node or Vite)
 - 🔄 **Sync API** → drop-in replacement for `dotenv.config()` (no `await`)
 - 🌍 **Multi-Environment** → auto-load `.env.[mode]` based on NODE_ENV
 - 🛡️ **Vite Security** → safe template with proper VITE_ prefix usage
-- 📦 **Zero Runtime Config** → works with CommonJS & ESM
+- 📦 **Zero Native Dependencies** → works with CommonJS & ESM
+- 🔓 **Quote Stripping** → automatically strips quotes from `.env` values (v1.4.0+)
+
+> **Note:** v1.3.0+ uses pure Node.js crypto (no keytar/native deps). Legacy keytar format still supported for migration.
 
 ---
 
@@ -362,14 +365,17 @@ All tests cover:
 | Feature | dotenv | dotenv-guard |
 |---------|--------|--------------|
 | Load .env files | ✅ | ✅ |
-| Encryption | ❌ | ✅ AES-256-CBC |
+| Encryption | ❌ | ✅ AES-256-GCM |
 | Schema validation | ❌ | ✅ Regex + Enum |
 | Multi-environment | ❌ | ✅ Auto-load |
 | CLI tools | ❌ | ✅ Full-featured |
 | Vite optimization | ❌ | ✅ Security-first |
-| System keychain | ❌ | ✅ Via keytar |
+| Key storage | ❌ | ✅ Auto-generated (no native deps) |
+| Quote stripping | ❌ | ✅ Standard dotenv behavior |
 
 **Not a replacement for dotenv** → a **secure extension** for production apps.
+
+> **Migration Note:** v1.3.0+ deprecated keytar in favor of pure Node.js crypto. Legacy keytar-encrypted files are still supported.
 
 ---
 

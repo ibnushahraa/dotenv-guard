@@ -10,6 +10,30 @@ const { loadEncryptionConfig, shouldEncrypt } = require('./encryptionConfig');
  */
 
 /**
+ * Strip surrounding quotes from a value (single or double quotes)
+ * Only strips if the value starts AND ends with the same quote type
+ * @param {string} value - Value that may have surrounding quotes
+ * @returns {string} Value without surrounding quotes
+ */
+function stripQuotes(value) {
+  if (!value || typeof value !== 'string') return value;
+
+  const len = value.length;
+  if (len < 2) return value;
+
+  const firstChar = value[0];
+  const lastChar = value[len - 1];
+
+  // Check if surrounded by matching quotes (single or double)
+  if ((firstChar === '"' && lastChar === '"') ||
+      (firstChar === "'" && lastChar === "'")) {
+    return value.slice(1, -1);
+  }
+
+  return value;
+}
+
+/**
  * Encrypt a single value using AES-256-GCM
  * @param {string} value - Plaintext value
  * @returns {string} Encrypted value in format "aes:ivHex:authTagHex:encryptedHex"
@@ -164,6 +188,9 @@ function encryptEnv(file = '.env', outputFile = null, configFile = 'env.enc.json
     const key = line.slice(0, idx).trim();
     let value = line.slice(idx + 1).trim();
 
+    // Strip quotes from value (dotenv standard behavior)
+    value = stripQuotes(value);
+
     // Check if already encrypted
     if (isEncrypted(value)) {
       output.push(`${key}=${value}`);
@@ -246,7 +273,10 @@ function injectToProcess(content, skipDecrypt = false) {
     if (idx === -1) continue;
 
     const key = line.slice(0, idx).trim();
-    const value = line.slice(idx + 1).trim();
+    let value = line.slice(idx + 1).trim();
+
+    // Strip quotes from value (dotenv standard behavior)
+    value = stripQuotes(value);
 
     const plainValue = (skipDecrypt || !isEncrypted(value)) ? value : decryptValue(value);
     if (key) process.env[key] = plainValue;
@@ -313,6 +343,7 @@ function validateEnv(env, schema) {
 }
 
 module.exports = {
+  stripQuotes,
   encryptValue,
   decryptValue,
   isEncrypted,

@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] - 2025-11-03
+
+### Added - Core Package v1.4.0
+- **Quote Stripping Support**: Automatic stripping of surrounding quotes from `.env` values
+  - Strips both single (`'`) and double (`"`) quotes from values
+  - Only strips matching pairs of quotes (opening and closing must match)
+  - Handles nested quotes correctly (e.g., `"He said 'hello'"` → `He said 'hello'`)
+  - Compatible with dotenv standard behavior and best practices
+  - New function: `stripQuotes()` exported for public use
+  - Applied during both encryption and runtime loading
+  - Examples:
+    - `SITE_NAME="Uwupay Next"` → `process.env.SITE_NAME = "Uwupay Next"` (without quotes)
+    - `MESSAGE='Hello World'` → `process.env.MESSAGE = "Hello World"` (without quotes)
+    - `DB_URL="postgresql://localhost"` → Works correctly with encryption
+  - 16 new test cases added for quote stripping functionality
+  - Total: 31 cryptoEncryption tests passing
+
+### Fixed - Core Package v1.4.0
+- **Optional Dependencies Tests**: Skipped legacy tests for optional dependencies
+  - `test/env.test.js` - Skipped (legacy keytar tests, deprecated)
+  - `test/detectVite.test.js` - Skipped (optional deasync dependency)
+  - All relevant functionality tested in `cryptoEncryption.test.js`
+  - Test results: 11 suites passed, 2 skipped, 124 tests passed
+
+### Changed - Vite Plugin v0.4.2
+- **Version Bump**: 0.4.1 → 0.4.2
+- **Core Dependency**: Updated to `@ibnushahraa/dotenv-guard@^1.4.0`
+  - Now supports quote stripping in Vite builds
+  - Quoted values in `.env` files work seamlessly
+
+### Changed - Nuxt Module v0.1.0-beta.2
+- **Version Bump**: 0.1.0-beta.1 → 0.1.0-beta.2
+- **Core Dependency**: Updated to `@ibnushahraa/dotenv-guard@^1.4.0`
+  - Now supports quote stripping in Nuxt applications
+  - Quoted values in `.env` files work seamlessly
+
+---
+
 ## [Unreleased]
 
 ### Added - Core Package v1.3.0
