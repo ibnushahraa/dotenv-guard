@@ -1,6 +1,6 @@
 {
   "name": "@ibnushahraa/nuxt-dotenv-guard",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "description": "Nuxt module for dotenv-guard - secure .env files with encryption",
   "type": "module",
   "exports": {

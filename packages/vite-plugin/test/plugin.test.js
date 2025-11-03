@@ -190,5 +190,69 @@ describe('vite-plugin-dotenv-guard', () => {
 
       warnSpy.mockRestore();
     });
+
+    it('should strip double quotes from values', async () => {
+      fs.writeFileSync(testEnvFile, 'SITE_NAME="Uwupay Next"\nAPP_TITLE="My App"');
+
+      const plugin = dotenvGuardPlugin({ path: '.env.test' });
+      const mockConfig = {};
+      const mockEnv = { mode: 'test' };
+
+      await plugin.config(mockConfig, mockEnv);
+
+      expect(process.env.SITE_NAME).toBe('Uwupay Next');
+      expect(process.env.APP_TITLE).toBe('My App');
+
+      delete process.env.SITE_NAME;
+      delete process.env.APP_TITLE;
+    });
+
+    it('should strip single quotes from values', async () => {
+      fs.writeFileSync(testEnvFile, "MESSAGE='Hello World'\nTITLE='Test'");
+
+      const plugin = dotenvGuardPlugin({ path: '.env.test' });
+      const mockConfig = {};
+      const mockEnv = { mode: 'test' };
+
+      await plugin.config(mockConfig, mockEnv);
+
+      expect(process.env.MESSAGE).toBe('Hello World');
+      expect(process.env.TITLE).toBe('Test');
+
+      delete process.env.MESSAGE;
+      delete process.env.TITLE;
+    });
+
+    it('should handle values without quotes', async () => {
+      fs.writeFileSync(testEnvFile, 'PORT=3000\nNODE_ENV=production');
+
+      const plugin = dotenvGuardPlugin({ path: '.env.test' });
+      const mockConfig = {};
+      const mockEnv = { mode: 'test' };
+
+      await plugin.config(mockConfig, mockEnv);
+
+      expect(process.env.PORT).toBe('3000');
+      expect(process.env.NODE_ENV).toBe('production');
+
+      delete process.env.PORT;
+      delete process.env.NODE_ENV;
+    });
+
+    it('should handle nested quotes correctly', async () => {
+      fs.writeFileSync(testEnvFile, `MSG1="He said 'hello'"\nMSG2='She said "hi"'`);
+
+      const plugin = dotenvGuardPlugin({ path: '.env.test' });
+      const mockConfig = {};
+      const mockEnv = { mode: 'test' };
+
+      await plugin.config(mockConfig, mockEnv);
+
+      expect(process.env.MSG1).toBe("He said 'hello'");
+      expect(process.env.MSG2).toBe('She said "hi"');
+
+      delete process.env.MSG1;
+      delete process.env.MSG2;
+    });
   });
 });

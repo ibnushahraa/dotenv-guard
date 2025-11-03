@@ -411,4 +411,99 @@ NUXT_DB_HOST=localhost
     });
   });
 
+  describe('Quote Stripping (like module does)', () => {
+    // Helper function (same as in module)
+    function stripQuotes(value) {
+      if (!value || typeof value !== 'string') return value;
+      const len = value.length;
+      if (len < 2) return value;
+      const firstChar = value[0];
+      const lastChar = value[len - 1];
+      if ((firstChar === '"' && lastChar === '"') || (firstChar === "'" && lastChar === "'")) {
+        return value.slice(1, -1);
+      }
+      return value;
+    }
+
+    it('should strip double quotes from values', () => {
+      fs.writeFileSync(testEnvFile, 'NUXT_SITE_NAME="Uwupay Next"\nNUXT_APP_TITLE="My App"');
+
+      const content = fs.readFileSync(testEnvFile, 'utf8');
+      const envVars = {};
+
+      for (const line of content.split(/\r?\n/)) {
+        if (!line || line.trim() === '' || line.trim().startsWith('#')) continue;
+        const idx = line.indexOf('=');
+        if (idx === -1) continue;
+        const key = line.slice(0, idx).trim();
+        let value = line.slice(idx + 1).trim();
+        value = stripQuotes(value);
+        if (key) envVars[key] = value;
+      }
+
+      expect(envVars.NUXT_SITE_NAME).toBe('Uwupay Next');
+      expect(envVars.NUXT_APP_TITLE).toBe('My App');
+    });
+
+    it('should strip single quotes from values', () => {
+      fs.writeFileSync(testEnvFile, "NUXT_MESSAGE='Hello World'\nNUXT_TITLE='Test'");
+
+      const content = fs.readFileSync(testEnvFile, 'utf8');
+      const envVars = {};
+
+      for (const line of content.split(/\r?\n/)) {
+        if (!line || line.trim() === '' || line.trim().startsWith('#')) continue;
+        const idx = line.indexOf('=');
+        if (idx === -1) continue;
+        const key = line.slice(0, idx).trim();
+        let value = line.slice(idx + 1).trim();
+        value = stripQuotes(value);
+        if (key) envVars[key] = value;
+      }
+
+      expect(envVars.NUXT_MESSAGE).toBe('Hello World');
+      expect(envVars.NUXT_TITLE).toBe('Test');
+    });
+
+    it('should handle values without quotes', () => {
+      fs.writeFileSync(testEnvFile, 'NUXT_PORT=3000\nNUXT_NODE_ENV=production');
+
+      const content = fs.readFileSync(testEnvFile, 'utf8');
+      const envVars = {};
+
+      for (const line of content.split(/\r?\n/)) {
+        if (!line || line.trim() === '' || line.trim().startsWith('#')) continue;
+        const idx = line.indexOf('=');
+        if (idx === -1) continue;
+        const key = line.slice(0, idx).trim();
+        let value = line.slice(idx + 1).trim();
+        value = stripQuotes(value);
+        if (key) envVars[key] = value;
+      }
+
+      expect(envVars.NUXT_PORT).toBe('3000');
+      expect(envVars.NUXT_NODE_ENV).toBe('production');
+    });
+
+    it('should handle nested quotes correctly', () => {
+      fs.writeFileSync(testEnvFile, `NUXT_MSG1="He said 'hello'"\nNUXT_MSG2='She said "hi"'`);
+
+      const content = fs.readFileSync(testEnvFile, 'utf8');
+      const envVars = {};
+
+      for (const line of content.split(/\r?\n/)) {
+        if (!line || line.trim() === '' || line.trim().startsWith('#')) continue;
+        const idx = line.indexOf('=');
+        if (idx === -1) continue;
+        const key = line.slice(0, idx).trim();
+        let value = line.slice(idx + 1).trim();
+        value = stripQuotes(value);
+        if (key) envVars[key] = value;
+      }
+
+      expect(envVars.NUXT_MSG1).toBe("He said 'hello'");
+      expect(envVars.NUXT_MSG2).toBe('She said "hi"');
+    });
+  });
+
 });

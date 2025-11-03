@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Hotfix] - 2025-11-03
+
+### Fixed - Vite Plugin v0.4.3
+- **Version Bump**: 0.4.2 → 0.4.3
+- **Quote Stripping Implementation**: Added local `stripQuotes()` function to Vite plugin
+  - Fixed issue where quoted values in `.env` files were not stripped in Vite builds
+  - Plugin now correctly strips both single and double quotes
+  - Added 4 new test cases for quote stripping (19 total tests)
+  - Examples now work correctly:
+    - `SITE_NAME="Uwupay Next"` → correctly parsed without quotes
+    - `MESSAGE='Hello World'` → correctly parsed without quotes
+
+### Fixed - Nuxt Module v0.1.0-beta.3
+- **Version Bump**: 0.1.0-beta.2 → 0.1.0-beta.3
+- **Quote Stripping Implementation**: Added local `stripQuotes()` function to Nuxt module
+  - Fixed issue where quoted values in `.env` files were not stripped in Nuxt apps
+  - Module now correctly strips both single and double quotes
+  - Added 4 new test cases for quote stripping (15 total tests)
+  - Works seamlessly with server-side and public runtime config
+
+### Technical Details
+- Both plugins now have local implementation of `stripQuotes()` function
+- Ensures compatibility even when core package is not yet installed
+- Maintains consistent behavior with core package quote stripping
+
+---
+
 ## [1.4.0] - 2025-11-03
 
 ### Added - Core Package v1.4.0

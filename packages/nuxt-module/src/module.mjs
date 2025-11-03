@@ -4,6 +4,30 @@ import { loadEnv, decryptValue, isEncrypted } from '@ibnushahraa/dotenv-guard'
 import fs from 'fs'
 import path from 'path'
 
+/**
+ * Strip surrounding quotes from a value (single or double quotes)
+ * Only strips if the value starts AND ends with the same quote type
+ * @param {string} value - Value that may have surrounding quotes
+ * @returns {string} Value without surrounding quotes
+ */
+function stripQuotes(value) {
+  if (!value || typeof value !== 'string') return value
+
+  const len = value.length
+  if (len < 2) return value
+
+  const firstChar = value[0]
+  const lastChar = value[len - 1]
+
+  // Check if surrounded by matching quotes (single or double)
+  if ((firstChar === '"' && lastChar === '"') ||
+      (firstChar === "'" && lastChar === "'")) {
+    return value.slice(1, -1)
+  }
+
+  return value
+}
+
 export default defineNuxtModule({
   meta: {
     name: '@ibnushahraa/nuxt-dotenv-guard',
@@ -44,6 +68,9 @@ export default defineNuxtModule({
 
       const key = line.slice(0, idx).trim()
       let value = line.slice(idx + 1).trim()
+
+      // Strip quotes (dotenv standard behavior)
+      value = stripQuotes(value)
 
       // Auto-decrypt encrypted values
       if (isEncrypted(value)) {
